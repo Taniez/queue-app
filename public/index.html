@@ -65,8 +65,16 @@
     }
 
     .admin-status {
-      color: green;
       font-weight: bold;
+      margin-top: 5px;
+    }
+
+    .admin-success {
+      color: green;
+    }
+
+    .admin-error {
+      color: red;
     }
   </style>
 </head>
@@ -94,23 +102,30 @@
   <script>
     const socket = io();
     let adminVerified = false;
-
+  
     function isAdmin() {
       return adminVerified;
     }
-
+  
     function checkAdmin() {
       const password = document.getElementById('adminPass').value;
-      if (password === '1234') {
+      socket.emit('check-admin', password); // ส่งให้ server ตรวจ
+      document.getElementById('adminPass').value = '';
+    }
+  
+    socket.on('admin-status', (isValid) => {
+      const status = document.getElementById('adminStatus');
+      if (isValid) {
         adminVerified = true;
-        document.getElementById('adminStatus').textContent = 'ยืนยันแล้ว: คุณคือ Admin';
-        document.getElementById('adminPass').value = '';
+        status.textContent = 'ยืนยันแล้ว: คุณคือ Admin';
+        status.className = 'admin-status admin-success';
       } else {
         adminVerified = false;
-        document.getElementById('adminStatus').textContent = 'รหัสผ่านไม่ถูกต้อง';
+        status.textContent = 'รหัสผ่านไม่ถูกต้อง';
+        status.className = 'admin-status admin-error';
       }
-    }
-
+    });
+  
     socket.on('queue-update', (queue) => {
       const ul = document.getElementById('queueList');
       ul.innerHTML = '';
@@ -120,7 +135,7 @@
         ul.appendChild(li);
       });
     });
-
+  
     function joinQueue() {
       const name = document.getElementById('nameInput').value;
       if (name) {
@@ -128,14 +143,15 @@
         document.getElementById('nameInput').value = '';
       }
     }
-
+  
     function nextQueue() {
       socket.emit('next-queue', isAdmin());
     }
-
+  
     function restoreQueue() {
       socket.emit('restore-queue', isAdmin());
     }
   </script>
+  
 </body>
 </html>
