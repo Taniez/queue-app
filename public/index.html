@@ -25,6 +25,7 @@
       margin: 10px;
       border: 1px solid #ccc;
       border-radius: 8px;
+      box-sizing: border-box;
     }
 
     button {
@@ -36,6 +37,7 @@
       border-radius: 8px;
       cursor: pointer;
       transition: background-color 0.3s ease;
+      box-sizing: border-box;
     }
 
     button:hover {
@@ -46,6 +48,9 @@
       list-style: none;
       padding: 0;
       margin-top: 20px;
+      max-width: 90vw;
+      margin-left: auto;
+      margin-right: auto;
     }
 
     #queueList li {
@@ -53,8 +58,10 @@
       padding: 10px;
       margin: 5px auto;
       width: 300px;
+      max-width: 90vw;
       border-radius: 6px;
       box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      box-sizing: border-box;
     }
 
     .admin-controls {
@@ -77,24 +84,65 @@
     .admin-error {
       color: red;
     }
+
     .queue-item {
-    transition: transform 0.3s ease, opacity 0.3s ease;
-  }
-
-  .queue-item.new {
-    animation: slideIn 0.5s ease;
-  }
-
-  @keyframes slideIn {
-    from {
-      transform: translateX(50px);
-      opacity: 0;
+      transition: transform 0.3s ease, opacity 0.3s ease;
     }
-    to {
-      transform: translateX(0);
-      opacity: 1;
+
+    .queue-item.new {
+      animation: slideIn 0.5s ease;
     }
-  }
+
+    @keyframes slideIn {
+      from {
+        transform: translateX(50px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 600px) {
+      input[type="text"], input[type="password"], button {
+        width: 90vw;
+        font-size: 18px;
+      }
+
+      #queueList li {
+        width: 90vw;
+        font-size: 18px;
+        padding: 15px;
+      }
+    }
+
+    @media (min-width: 601px) and (max-width: 1024px) {
+      input[type="text"], input[type="password"], button {
+        width: 70vw;
+        font-size: 17px;
+      }
+
+      #queueList li {
+        width: 70vw;
+        font-size: 17px;
+        padding: 12px;
+      }
+    }
+
+    @media (min-width: 1025px) {
+      input[type="text"], input[type="password"], button {
+        width: 250px;
+        font-size: 16px;
+      }
+
+      #queueList li {
+        width: 300px;
+        font-size: 16px;
+        padding: 10px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -121,17 +169,17 @@
   <script>
     const socket = io();
     let adminVerified = false;
-  
+
     function isAdmin() {
       return adminVerified;
     }
-  
+
     function checkAdmin() {
       const password = document.getElementById('adminPass').value;
-      socket.emit('check-admin', password); // ส่งให้ server ตรวจ
+      socket.emit('check-admin', password);
       document.getElementById('adminPass').value = '';
     }
-  
+
     socket.on('admin-status', (isValid) => {
       const status = document.getElementById('adminStatus');
       if (isValid) {
@@ -144,19 +192,18 @@
         status.className = 'admin-status admin-error';
       }
     });
-  
-    socket.on('queue-update', (queue) => {
-  const ul = document.getElementById('queueList');
-  ul.innerHTML = '';
-  queue.forEach((item, i) => {
-    const li = document.createElement('li');
-    li.textContent = `${i + 1}. ${item.name}`;
-    li.className = 'queue-item new';
-    ul.appendChild(li);
-  });
-});
 
-  
+    socket.on('queue-update', (queue) => {
+      const ul = document.getElementById('queueList');
+      ul.innerHTML = '';
+      queue.forEach((item, i) => {
+        const li = document.createElement('li');
+        li.textContent = `${i + 1}. ${item.name}`;
+        li.className = 'queue-item new';
+        ul.appendChild(li);
+      });
+    });
+
     function joinQueue() {
       const name = document.getElementById('nameInput').value;
       if (name) {
@@ -164,24 +211,22 @@
         document.getElementById('nameInput').value = '';
       }
     }
-  
-    function nextQueue() {
-  if (!isAdmin()) {
-    Swal.fire({
-      icon: 'error',
-      title: 'ไม่อนุญาต',
-      text: 'คุณไม่ใช่ผู้ดูแลระบบ',
-    });
-    return;
-  }
-  socket.emit('next-queue', true);
-}
 
-  
+    function nextQueue() {
+      if (!isAdmin()) {
+        Swal.fire({
+          icon: 'error',
+          title: 'ไม่อนุญาต',
+          text: 'คุณไม่ใช่ผู้ดูแลระบบ',
+        });
+        return;
+      }
+      socket.emit('next-queue', true);
+    }
+
     function restoreQueue() {
       socket.emit('restore-queue', isAdmin());
     }
   </script>
-  
 </body>
 </html>
