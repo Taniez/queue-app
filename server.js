@@ -1,187 +1,81 @@
-<!DOCTYPE html>
-<html lang="th">
-<head>
-  <meta charset="UTF-8">
-  <title>ระบบคิว</title>
-  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <style>
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background-color: #f7f7f7;
-      margin: 0;
-      padding: 20px;
-      text-align: center;
-    }
+const express = require('express');
+const http = require('http');
+const socketIO = require('socket.io');
+const mysql = require('mysql2');
+const fs = require('fs'); // ✅ แก้ไข: ต้อง require fs ด้วย
+const app = express();
+const server = http.createServer(app);
+const io = socketIO(server);
+require('dotenv').config();
 
-    h1 {
-      color: #2c3e50;
-    }
-
-    input[type="text"], input[type="password"] {
-      padding: 10px;
-      font-size: 16px;
-      width: 250px;
-      margin: 10px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-    }
-
-    button {
-      padding: 10px 15px;
-      font-size: 16px;
-      background-color: #3498db;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
-    }
-
-    button:hover {
-      background-color: #2980b9;
-    }
-
-    #queueList {
-      list-style: none;
-      padding: 0;
-      margin-top: 20px;
-    }
-
-    #queueList li {
-      background-color: #ecf0f1;
-      padding: 10px;
-      margin: 5px auto;
-      width: 300px;
-      border-radius: 6px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    }
-
-    .admin-controls {
-      margin-top: 20px;
-    }
-
-    .admin-auth {
-      margin-top: 20px;
-    }
-
-    .admin-status {
-      font-weight: bold;
-      margin-top: 5px;
-    }
-
-    .admin-success {
-      color: green;
-    }
-
-    .admin-error {
-      color: red;
-    }
-    .queue-item {
-    transition: transform 0.3s ease, opacity 0.3s ease;
+// ✅ สร้าง connection พร้อมใช้ SSL
+const db = mysql.createConnection({
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASS,
+  database: process.env.DB_NAME,
+  port: process.env.DB_PORT || 4000,
+  ssl: {
+    ca: fs.readFileSync(__dirname + '/ca.pem') // ✅ ใช้ CA ที่คุณวางไว้
   }
+});
 
-  .queue-item.new {
-    animation: slideIn 0.5s ease;
-  }
+// ✅ เชื่อมต่อฐานข้อมูล
+db.connect(err => {
+  if (err) throw err;
+  console.log("✅ Connected to TiDB via SSL");
+});
 
-  @keyframes slideIn {
-    from {
-      transform: translateX(50px);
-      opacity: 0;
-    }
-    to {
-      transform: translateX(0);
-      opacity: 1;
-    }
-  }
-  </style>
-</head>
-<body>
-  <h1>ระบบคิวออนไลน์</h1>
+app.use(express.static('public'));
 
-  <div class="admin-auth">
-    <input type="password" id="adminPass" placeholder="รหัสผ่าน Admin">
-    <button onclick="checkAdmin()">ยืนยันตัวตน</button>
-    <div id="adminStatus" class="admin-status"></div>
-  </div>
+// 👉 ส่งข้อมูล queue ไปยัง client
+const emitQueue = () => {
+  db.query("SELECT * FROM queue WHERE status = 'waiting' ORDER BY id", (err, rows) => {
+    if (!err) io.emit('queue-update', rows);
+  });
+};
 
-  <div>
-    <input type="text" id="nameInput" placeholder="ชื่อของคุณ">
-    <button onclick="joinQueue()">เข้าคิว</button>
-  </div>
+io.on('connection', (socket) => {
+  console.log("🔌 New client connected");
 
-  <div class="admin-controls">
-    <button onclick="nextQueue()">เรียกคิวถัดไป (Admin เท่านั้น)</button>
-  </div>
+  emitQueue();
 
-  <h2>คิวปัจจุบัน</h2>
-  <ul id="queueList"></ul>
+  socket.on('join-queue', (name) => {
+    db.query("INSERT INTO queue (name) VALUES (?)", [name], (err) => {
+      if (!err) emitQueue();
+    });
+  });
 
-  <script>
-    const socket = io();
-    let adminVerified = false;
-  
-    function isAdmin() {
-      return adminVerified;
-    }
-  
-    function checkAdmin() {
-      const password = document.getElementById('adminPass').value;
-      socket.emit('check-admin', password); // ส่งให้ server ตรวจ
-      document.getElementById('adminPass').value = '';
-    }
-  
-    socket.on('admin-status', (isValid) => {
-      const status = document.getElementById('adminStatus');
-      if (isValid) {
-        adminVerified = true;
-        status.textContent = 'ยืนยันแล้ว: คุณคือ Admin';
-        status.className = 'admin-status admin-success';
-      } else {
-        adminVerified = false;
-        status.textContent = 'รหัสผ่านไม่ถูกต้อง';
-        status.className = 'admin-status admin-error';
+  socket.on('next-queue', (isAdmin) => {
+    if (!isAdmin) return;
+    db.query("UPDATE queue SET status = 'called' WHERE status = 'waiting' ORDER BY id LIMIT 1", (err) => {
+      if (!err) emitQueue();
+    });
+  });
+
+  socket.on('restore-queue', (isAdmin) => {
+    if (!isAdmin) return;
+    db.query("SELECT * FROM queue WHERE status = 'called' ORDER BY id DESC LIMIT 1", (err, rows) => {
+      if (!err && rows.length > 0) {
+        const lastCalled = rows[0];
+        db.query("UPDATE queue SET status = 'waiting' WHERE id = ?", [lastCalled.id], (err2) => {
+          if (!err2) emitQueue();
+        });
       }
     });
-  
-    socket.on('queue-update', (queue) => {
-  const ul = document.getElementById('queueList');
-  ul.innerHTML = '';
-  queue.forEach((item, i) => {
-    const li = document.createElement('li');
-    li.textContent = `${i + 1}. ${item.name}`;
-    li.className = 'queue-item new';
-    ul.appendChild(li);
+  });
+
+  // ✅ แก้ตรงนี้ให้อยู่ใน scope เดียวกัน
+  socket.on('check-admin', (password) => {
+    if (password === process.env.ADMIN_PASSWORD) {
+      socket.emit('admin-status', true);
+    } else {
+      socket.emit('admin-status', false);
+    }
   });
 });
 
-  
-    function joinQueue() {
-      const name = document.getElementById('nameInput').value;
-      if (name) {
-        socket.emit('join-queue', name);
-        document.getElementById('nameInput').value = '';
-      }
-    }
-  
-    function nextQueue() {
-  if (!isAdmin()) {
-    Swal.fire({
-      icon: 'error',
-      title: 'ไม่อนุญาต',
-      text: 'คุณไม่ใช่ผู้ดูแลระบบ',
-    });
-    return;
-  }
-  socket.emit('next-queue', true);
-}
 
-  
-    function restoreQueue() {
-      socket.emit('restore-queue', isAdmin());
-    }
-  </script>
-  
-</body>
-</html>
+// ✅ เริ่มต้น server
+const PORT = process.env.PORT || 10000;
+server.listen(PORT, () => console.log(🚀 Server ready on port ${PORT}));
