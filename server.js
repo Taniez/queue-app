@@ -64,7 +64,8 @@ io.on('connection', (socket) => {
       }
     });
   });
-});
+
+  // ✅ แก้ตรงนี้ให้อยู่ใน scope เดียวกัน
   socket.on('check-admin', (password) => {
     if (password === process.env.ADMIN_PASSWORD) {
       socket.emit('admin-status', true);
@@ -73,6 +74,7 @@ io.on('connection', (socket) => {
     }
   });
 });
+
 
 // ✅ เริ่มต้น server
 const PORT = process.env.PORT || 10000;
