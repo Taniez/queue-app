@@ -78,4 +78,5 @@ io.on('connection', (socket) => {
 
 // ✅ เริ่มต้น server
 const PORT = process.env.PORT || 10000;
-server.listen(PORT, () => console.log(🚀 Server ready on port ${PORT}));
+server.listen(PORT, () => console.log("Server ready on port " + PORT));
+
