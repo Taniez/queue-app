@@ -65,6 +65,14 @@ io.on('connection', (socket) => {
     });
   });
 });
+  socket.on('check-admin', (password) => {
+    if (password === process.env.ADMIN_PASSWORD) {
+      socket.emit('admin-status', true);
+    } else {
+      socket.emit('admin-status', false);
+    }
+  });
+});
 
 // ✅ เริ่มต้น server
 const PORT = process.env.PORT || 10000;
