@@ -2,11 +2,13 @@ const express = require('express');
 const http = require('http');
 const socketIO = require('socket.io');
 const mysql = require('mysql2');
+const fs = require('fs'); // ✅ แก้ไข: ต้อง require fs ด้วย
 const app = express();
 const server = http.createServer(app);
 const io = socketIO(server);
 require('dotenv').config();
 
+// ✅ สร้าง connection พร้อมใช้ SSL
 const db = mysql.createConnection({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
@@ -16,14 +18,17 @@ const db = mysql.createConnection({
   ssl: {
     ca: fs.readFileSync(__dirname + '/ca.pem') // ✅ ใช้ CA ที่คุณวางไว้
   }
+});
 
+// ✅ เชื่อมต่อฐานข้อมูล
 db.connect(err => {
   if (err) throw err;
-  console.log("✅ Connected to MySQL");
+  console.log("✅ Connected to TiDB via SSL");
 });
 
 app.use(express.static('public'));
 
+// 👉 ส่งข้อมูล queue ไปยัง client
 const emitQueue = () => {
   db.query("SELECT * FROM queue WHERE status = 'waiting' ORDER BY id", (err, rows) => {
     if (!err) io.emit('queue-update', rows);
@@ -61,5 +66,6 @@ io.on('connection', (socket) => {
   });
 });
 
+// ✅ เริ่มต้น server
 const PORT = process.env.PORT || 10000;
 server.listen(PORT, () => console.log(`🚀 Server ready on port ${PORT}`));
