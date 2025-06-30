@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>ระบบคิว</title>
   <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
@@ -76,6 +77,24 @@
     .admin-error {
       color: red;
     }
+    .queue-item {
+    transition: transform 0.3s ease, opacity 0.3s ease;
+  }
+
+  .queue-item.new {
+    animation: slideIn 0.5s ease;
+  }
+
+  @keyframes slideIn {
+    from {
+      transform: translateX(50px);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
   </style>
 </head>
 <body>
@@ -127,14 +146,16 @@
     });
   
     socket.on('queue-update', (queue) => {
-      const ul = document.getElementById('queueList');
-      ul.innerHTML = '';
-      queue.forEach((item, i) => {
-        const li = document.createElement('li');
-        li.textContent = `${i + 1}. ${item.name}`;
-        ul.appendChild(li);
-      });
-    });
+  const ul = document.getElementById('queueList');
+  ul.innerHTML = '';
+  queue.forEach((item, i) => {
+    const li = document.createElement('li');
+    li.textContent = `${i + 1}. ${item.name}`;
+    li.className = 'queue-item new';
+    ul.appendChild(li);
+  });
+});
+
   
     function joinQueue() {
       const name = document.getElementById('nameInput').value;
@@ -145,8 +166,17 @@
     }
   
     function nextQueue() {
-      socket.emit('next-queue', isAdmin());
-    }
+  if (!isAdmin()) {
+    Swal.fire({
+      icon: 'error',
+      title: 'ไม่อนุญาต',
+      text: 'คุณไม่ใช่ผู้ดูแลระบบ',
+    });
+    return;
+  }
+  socket.emit('next-queue', true);
+}
+
   
     function restoreQueue() {
       socket.emit('restore-queue', isAdmin());
