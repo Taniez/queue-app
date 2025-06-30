@@ -1,25 +1,91 @@
 <!DOCTYPE html>
-<html>
+<html lang="th">
 <head>
   <meta charset="UTF-8">
   <title>ระบบคิว</title>
   <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f7f7f7;
+      margin: 0;
+      padding: 20px;
+      text-align: center;
+    }
+
+    h1 {
+      color: #2c3e50;
+    }
+
+    input[type="text"], input[type="password"] {
+      padding: 10px;
+      font-size: 16px;
+      width: 250px;
+      margin: 10px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+
+    button {
+      padding: 10px 15px;
+      font-size: 16px;
+      background-color: #3498db;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #2980b9;
+    }
+
+    #queueList {
+      list-style: none;
+      padding: 0;
+      margin-top: 20px;
+    }
+
+    #queueList li {
+      background-color: #ecf0f1;
+      padding: 10px;
+      margin: 5px auto;
+      width: 300px;
+      border-radius: 6px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .admin-controls {
+      margin-top: 20px;
+    }
+
+    .admin-auth {
+      margin-top: 20px;
+    }
+
+    .admin-status {
+      color: green;
+      font-weight: bold;
+    }
+  </style>
 </head>
 <body>
   <h1>ระบบคิวออนไลน์</h1>
 
-  <label>
-    <input type="checkbox" id="adminCheck"> ฉันคือ Admin
-  </label>
+  <div class="admin-auth">
+    <input type="password" id="adminPass" placeholder="รหัสผ่าน Admin">
+    <button onclick="checkAdmin()">ยืนยันตัวตน</button>
+    <div id="adminStatus" class="admin-status"></div>
+  </div>
 
   <div>
     <input type="text" id="nameInput" placeholder="ชื่อของคุณ">
     <button onclick="joinQueue()">เข้าคิว</button>
   </div>
 
-  <div>
+  <div class="admin-controls">
     <button onclick="nextQueue()">เรียกคิวถัดไป (Admin เท่านั้น)</button>
-    <button onclick="restoreQueue()">คืนคิวล่าสุด (Admin เท่านั้น)</button>
   </div>
 
   <h2>คิวปัจจุบัน</h2>
@@ -27,7 +93,23 @@
 
   <script>
     const socket = io();
-    const isAdmin = () => document.getElementById('adminCheck').checked;
+    let adminVerified = false;
+
+    function isAdmin() {
+      return adminVerified;
+    }
+
+    function checkAdmin() {
+      const password = document.getElementById('adminPass').value;
+      if (password === '1234') {
+        adminVerified = true;
+        document.getElementById('adminStatus').textContent = 'ยืนยันแล้ว: คุณคือ Admin';
+        document.getElementById('adminPass').value = '';
+      } else {
+        adminVerified = false;
+        document.getElementById('adminStatus').textContent = 'รหัสผ่านไม่ถูกต้อง';
+      }
+    }
 
     socket.on('queue-update', (queue) => {
       const ul = document.getElementById('queueList');
