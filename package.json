@@ -1,0 +1,14 @@
+{
+  "name": "web-queue-app",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.0.0",
+    "express": "^4.18.0",
+    "mysql2": "^3.3.0",
+    "socket.io": "^4.7.2"
+  }
+}
