@@ -145,12 +145,11 @@
     <button onclick="joinQueue()">เข้าคิว</button>
   </div>
 
-  <div class="admin-controls">
+  <div class="admin-controls" id="adminButtons" style="display: none;">
     <button onclick="nextQueue()">เรียกคิวถัดไป (Admin เท่านั้น)</button>
-  </div>
-  <div class="admin-controls">
     <button onclick="Cutoff()">Cutoff (Admin เท่านั้น)</button>
   </div>
+  
 
   <h2 style="font-size: 2.8rem; margin-top: 40px;">คิวปัจจุบัน</h2>
   <ul id="queueList"></ul>
@@ -172,17 +171,22 @@
     }
 
     socket.on('admin-status', (isValid) => {
-      const status = document.getElementById('adminStatus');
-      if (isValid) {
-        adminVerified = true;
-        status.textContent = 'ยืนยันแล้ว: คุณคือ Admin';
-        status.className = 'admin-status admin-success';
-      } else {
-        adminVerified = false;
-        status.textContent = 'รหัสผ่านไม่ถูกต้อง';
-        status.className = 'admin-status admin-error';
-      }
-    });
+  const status = document.getElementById('adminStatus');
+  const adminButtons = document.getElementById('adminButtons');
+
+  if (isValid) {
+    adminVerified = true;
+    status.textContent = 'ยืนยันแล้ว: คุณคือ Admin';
+    status.className = 'admin-status admin-success';
+    adminButtons.style.display = 'block'; // ✅ แสดงปุ่ม
+  } else {
+    adminVerified = false;
+    status.textContent = 'รหัสผ่านไม่ถูกต้อง';
+    status.className = 'admin-status admin-error';
+    adminButtons.style.display = 'none'; // ✅ ซ่อนปุ่ม
+  }
+});
+
 
     socket.on('queue-update', (queue) => {
     const ul = document.getElementById('queueList');
