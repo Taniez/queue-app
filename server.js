@@ -34,7 +34,7 @@ const emitQueue = () => {
     if (!err) io.emit('queue-update', rows);
   });
 };
-
+let isCutoff = false;
 io.on('connection', (socket) => {
   console.log("🔌 New client connected");
 
@@ -42,6 +42,17 @@ io.on('connection', (socket) => {
 
   socket.on('join-queue', (name) => {
     db.query("INSERT INTO queue (name) VALUES (?)", [name], (err) => {
+      if (!err) emitQueue();
+    });
+  });
+    socket.on('set-cutoff', (status) => {
+    isCutoff = status;
+  });
+    socket.on('join-queue', (data) => {
+    const name = typeof data === 'string' ? data : data.name;
+    const cutoffStatus = typeof data === 'object' && data.isCutoff ? 1 : 0;
+
+    db.query("INSERT INTO queue (name, cutoff) VALUES (?, ?)", [name, cutoffStatus], (err) => {
       if (!err) emitQueue();
     });
   });
