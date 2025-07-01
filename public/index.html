@@ -68,7 +68,6 @@
       box-sizing: border-box;
       max-width: 480px;
       font-weight: 600;
-      
     }
 
     .admin-controls {
@@ -94,7 +93,6 @@
       color: red;
     }
 
-    /* Animation */
     .queue-item {
       opacity: 0;
       transform: translateX(60px);
@@ -106,28 +104,36 @@
       transform: translateX(0);
     }
 
-    @media (min-width: 768px) {
-      input[type="text"],
-      input[type="password"],
-      button {
-        max-width: 600px;
-        font-size: 32px;
-        padding: 22px 30px;
-      }
+    .cutoff-mode {
+      background-color: #fff5f5 !important;
+    }
 
-      #queueList li {
-        max-width: 560px;
-        font-size: 32px;
-        padding: 28px 35px;
-      }
-      .cutoff-mode {
-    background-color: #fff5f5 !important;
-  }
+    .queue-item.cutoff {
+      background-color: #ff6b6b !important;
+      color: white;
+    }
 
-  .queue-item.cutoff {
-    background-color: #ff6b6b !important;
-    color: white;
-  }
+    .floating-sticker {
+      position: fixed;
+      width: 120px;
+      z-index: 9999;
+      pointer-events: none;
+      animation: floatUp 3s ease-out forwards;
+    }
+
+    @keyframes floatUp {
+      0% {
+        opacity: 0;
+        transform: translateY(50px) scale(0.8);
+      }
+      20% {
+        opacity: 1;
+        transform: translateY(0px) scale(1);
+      }
+      100% {
+        opacity: 0;
+        transform: translateY(-150px) scale(1.2) rotate(10deg);
+      }
     }
   </style>
 </head>
@@ -149,13 +155,11 @@
     <button onclick="nextQueue()">เรียกคิวถัดไป (Admin เท่านั้น)</button>
     <button onclick="Cutoff()">Cutoff (Admin เท่านั้น)</button>
   </div>
-  
 
   <h2 style="font-size: 2.8rem; margin-top: 40px;">คิวปัจจุบัน</h2>
   <ul id="queueList"></ul>
 
   <script>
-
     let isCutoff = false;
     const socket = io();
     let adminVerified = false;
@@ -166,67 +170,59 @@
 
     function checkAdmin() {
       const password = document.getElementById('adminPass').value;
-      socket.emit('check-admin', password); // ส่งให้ server ตรวจ
+      socket.emit('check-admin', password);
       document.getElementById('adminPass').value = '';
     }
 
     socket.on('admin-status', (isValid) => {
-  const status = document.getElementById('adminStatus');
-  const adminButtons = document.getElementById('adminButtons');
+      const status = document.getElementById('adminStatus');
+      const adminButtons = document.getElementById('adminButtons');
 
-  if (isValid) {
-    adminVerified = true;
-    status.textContent = 'ยืนยันแล้ว: คุณคือ Admin';
-    status.className = 'admin-status admin-success';
-    adminButtons.style.display = 'block'; // ✅ แสดงปุ่ม
-  } else {
-    adminVerified = false;
-    status.textContent = 'รหัสผ่านไม่ถูกต้อง';
-    status.className = 'admin-status admin-error';
-    adminButtons.style.display = 'none'; // ✅ ซ่อนปุ่ม
-  }
-});
-
+      if (isValid) {
+        adminVerified = true;
+        status.textContent = 'ยืนยันแล้ว: คุณคือ Admin';
+        status.className = 'admin-status admin-success';
+        adminButtons.style.display = 'block';
+      } else {
+        adminVerified = false;
+        status.textContent = 'รหัสผ่านไม่ถูกต้อง';
+        status.className = 'admin-status admin-error';
+        adminButtons.style.display = 'none';
+      }
+    });
 
     socket.on('queue-update', (queue) => {
-    const ul = document.getElementById('queueList');
-    ul.innerHTML = '';
+      const ul = document.getElementById('queueList');
+      ul.innerHTML = '';
 
-    queue.forEach((item, i) => {
-      const li = document.createElement('li');
-      li.textContent = `${i + 1}. ${item.name}`;
-      li.className = 'queue-item';
+      queue.forEach((item, i) => {
+        const li = document.createElement('li');
+        li.textContent = `${i + 1}. ${item.name}`;
+        li.className = 'queue-item';
 
-      // ถ้าเป็นคิวที่มาช่วง Cutoff ให้ใส่ class
-      if (item.cutoff === 1 || item.cutoff === true) {
-        li.classList.add('cutoff');
-      }
+        if (item.cutoff === 1 || item.cutoff === true) {
+          li.classList.add('cutoff');
+        }
 
-      ul.appendChild(li);
+        ul.appendChild(li);
+        setTimeout(() => li.classList.add('show'), i * 150);
 
-      setTimeout(() => {
-        li.classList.add('show');
-      }, i * 150);
+        // แสดงสติกเกอร์ตอน cutoff
+        if (isCutoff) showRandomSticker();
+      });
     });
-  });
-
 
     function joinQueue() {
-    const name = document.getElementById('nameInput').value;
-    if (name) {
-      socket.emit('join-queue', { name, isCutoff });
-      document.getElementById('nameInput').value = '';
+      const name = document.getElementById('nameInput').value;
+      if (name) {
+        socket.emit('join-queue', { name, isCutoff });
+        document.getElementById('nameInput').value = '';
+      }
     }
-  }
-
 
     function nextQueue() {
       if (!isAdmin()) {
-        Swal.fire({
-          icon: 'error',
-          title: 'ไม่อนุญาต',
-          text: 'คุณไม่ใช่ผู้ดูแลระบบ',
-        });
+        Swal.fire({ icon: 'error', title: 'ไม่อนุญาต', text: 'คุณไม่ใช่ผู้ดูแลระบบ' });
         return;
       }
       socket.emit('next-queue', true);
@@ -237,20 +233,39 @@
     }
 
     function Cutoff() {
-    if (!isAdmin()) {
-      Swal.fire({
-        icon: 'error',
-        title: 'ไม่อนุญาต',
-        text: 'คุณไม่ใช่ผู้ดูแลระบบ',
-      });
-      return;
+      if (!isAdmin()) {
+        Swal.fire({ icon: 'error', title: 'ไม่อนุญาต', text: 'คุณไม่ใช่ผู้ดูแลระบบ' });
+        return;
+      }
+
+      isCutoff = !isCutoff;
+      document.body.classList.toggle('cutoff-mode', isCutoff);
+      socket.emit('set-cutoff', isCutoff);
+
+      if (isCutoff) showRandomSticker();
     }
 
-    isCutoff = !isCutoff; // toggle
-    document.body.classList.toggle('cutoff-mode', isCutoff);
+    function showRandomSticker() {
+      const stickers = [
+        'https://tenor.com/vKr4XPBmiOU.gif',
+        'https://tenor.com/lAVh6l6jry4.gif',
+        'https://tenor.com/view/crying-cat-meme-gif-24816008.gif',
+        'https://tenor.com/eoxfkCjBqSS.gif'
+      ];
+      const chosen = stickers[Math.floor(Math.random() * stickers.length)];
 
-    // ส่งสถานะ cutoff ไปยัง server
-    socket.emit('set-cutoff', isCutoff);
+      const img = document.createElement('img');
+      img.src = chosen;
+      img.className = 'floating-sticker';
+
+      const x = Math.random() * window.innerWidth * 0.8;
+      const y = Math.random() * window.innerHeight * 0.6;
+      img.style.left = `${x}px`;
+      img.style.top = `${y}px`;
+
+      document.body.appendChild(img);
+
+      setTimeout(() => img.remove(), 3000);
     }
   </script>
 </body>
