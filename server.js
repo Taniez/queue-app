@@ -37,6 +37,7 @@ const emitQueue = () => {
 let isCutoff = false;
 io.on('connection', (socket) => {
   console.log("🔌 New client connected");
+  socket.emit('cutoff-status', isCutoff);
 
   emitQueue();
 
@@ -45,8 +46,9 @@ io.on('connection', (socket) => {
       if (!err) emitQueue();
     });
   });
-    socket.on('set-cutoff', (status) => {
-    isCutoff = status;
+  socket.on('set-cutoff', (newState) => {
+    isCutoff = newState;
+    io.emit('cutoff-status', isCutoff);
   });
     socket.on('join-queue', (data) => {
     const name = typeof data === 'string' ? data : data.name;
