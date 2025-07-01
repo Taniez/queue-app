@@ -13,13 +13,11 @@
       padding: 30px;
       text-align: center;
     }
-
     h1 {
       color: #2c3e50;
       font-size: 3.5rem;
       margin-bottom: 30px;
     }
-
     input[type="text"],
     input[type="password"],
     button {
@@ -33,7 +31,6 @@
       border: 1px solid #ccc;
       box-sizing: border-box;
     }
-
     button {
       background-color: #3498db;
       color: white;
@@ -43,12 +40,10 @@
       font-weight: 600;
       box-shadow: 0 4px 12px rgba(52, 152, 219, 0.5);
     }
-
     button:hover {
       background-color: #2980b9;
       box-shadow: 0 6px 16px rgba(41, 128, 185, 0.6);
     }
-
     #queueList {
       list-style: none;
       padding: 0;
@@ -57,7 +52,6 @@
       margin-left: auto;
       margin-right: auto;
     }
-
     #queueList li {
       background-color: #ecf0f1;
       padding: 25px 30px;
@@ -69,50 +63,34 @@
       max-width: 480px;
       font-weight: 600;
     }
-
     .admin-controls {
       margin-top: 30px;
     }
-
     .admin-auth {
       margin-top: 30px;
     }
-
     .admin-status {
       font-weight: 700;
       margin-top: 10px;
       font-size: 22px;
       min-height: 28px;
     }
-
-    .admin-success {
-      color: green;
-    }
-
-    .admin-error {
-      color: red;
-    }
-
+    .admin-success { color: green; }
+    .admin-error { color: red; }
     .queue-item {
       opacity: 0;
       transform: translateX(60px);
       transition: opacity 0.6s ease, transform 0.6s ease;
     }
-
     .queue-item.show {
       opacity: 1;
       transform: translateX(0);
     }
-
-    .cutoff-mode {
-      background-color: #fff5f5 !important;
-    }
-
+    .cutoff-mode { background-color: #fff5f5 !important; }
     .queue-item.cutoff {
       background-color: #ff6b6b !important;
       color: white;
     }
-
     .floating-sticker {
       position: fixed;
       width: 120px;
@@ -120,54 +98,37 @@
       pointer-events: none;
       animation: floatUp 3s ease-out forwards;
     }
-
     @keyframes floatUp {
-      0% {
-        opacity: 0;
-        transform: translateY(50px) scale(0.8);
-      }
-      20% {
-        opacity: 1;
-        transform: translateY(0px) scale(1);
-      }
-      100% {
-        opacity: 0;
-        transform: translateY(-150px) scale(1.2) rotate(10deg);
-      }
+      0% { opacity: 0; transform: translateY(50px) scale(0.8); }
+      20% { opacity: 1; transform: translateY(0px) scale(1); }
+      100% { opacity: 0; transform: translateY(-150px) scale(1.2) rotate(10deg); }
     }
   </style>
 </head>
 <body>
   <h1>ระบบคิวออนไลน์</h1>
-
   <div class="admin-auth">
     <input type="password" id="adminPass" placeholder="รหัสผ่าน Admin" />
     <button onclick="checkAdmin()">ยืนยันตัวตน</button>
     <div id="adminStatus" class="admin-status"></div>
   </div>
-
   <div>
     <input type="text" id="nameInput" placeholder="ชื่อของคุณ" />
     <button onclick="joinQueue()">เข้าคิว</button>
   </div>
-
   <div class="admin-controls" id="adminButtons" style="display: none;">
     <button onclick="nextQueue()">เรียกคิวถัดไป (Admin เท่านั้น)</button>
-    <button onclick="Cutoff()">Cutoff (Admin เท่านั้น)</button>
+    <button onclick="toggleCutoff()">Cutoff (Admin เท่านั้น)</button>
   </div>
-
   <h2 style="font-size: 2.8rem; margin-top: 40px;">คิวปัจจุบัน</h2>
   <ul id="queueList"></ul>
-
   <script>
     let isCutoff = false;
     let stickerInterval = null;
     const socket = io();
     let adminVerified = false;
 
-    function isAdmin() {
-      return adminVerified;
-    }
+    function isAdmin() { return adminVerified; }
 
     function checkAdmin() {
       const password = document.getElementById('adminPass').value;
@@ -178,36 +139,30 @@
     socket.on('admin-status', (isValid) => {
       const status = document.getElementById('adminStatus');
       const adminButtons = document.getElementById('adminButtons');
-
-      if (isValid) {
-        adminVerified = true;
-        status.textContent = 'ยืนยันแล้ว: คุณคือ Admin';
-        status.className = 'admin-status admin-success';
-        adminButtons.style.display = 'block';
-      } else {
-        adminVerified = false;
-        status.textContent = 'รหัสผ่านไม่ถูกต้อง';
-        status.className = 'admin-status admin-error';
-        adminButtons.style.display = 'none';
-      }
+      adminVerified = isValid;
+      status.textContent = isValid ? 'ยืนยันแล้ว: คุณคือ Admin' : 'รหัสผ่านไม่ถูกต้อง';
+      status.className = 'admin-status ' + (isValid ? 'admin-success' : 'admin-error');
+      adminButtons.style.display = isValid ? 'block' : 'none';
     });
 
     socket.on('queue-update', (queue) => {
       const ul = document.getElementById('queueList');
       ul.innerHTML = '';
-
       queue.forEach((item, i) => {
         const li = document.createElement('li');
         li.textContent = `${i + 1}. ${item.name}`;
         li.className = 'queue-item';
-
-        if (item.cutoff === 1 || item.cutoff === true) {
-          li.classList.add('cutoff');
-        }
-
+        if (item.cutoff === 1 || item.cutoff === true) li.classList.add('cutoff');
         ul.appendChild(li);
         setTimeout(() => li.classList.add('show'), i * 150);
       });
+    });
+
+    socket.on('cutoff-status', (state) => {
+      isCutoff = state;
+      document.body.classList.toggle('cutoff-mode', isCutoff);
+      if (isCutoff) startStickerLoop();
+      else stopStickerLoop();
     });
 
     function joinQueue() {
@@ -219,55 +174,37 @@
     }
 
     function nextQueue() {
-      if (!isAdmin()) {
-        Swal.fire({ icon: 'error', title: 'ไม่อนุญาต', text: 'คุณไม่ใช่ผู้ดูแลระบบ' });
-        return;
-      }
+      if (!isAdmin()) return Swal.fire({ icon: 'error', title: 'ไม่อนุญาต', text: 'คุณไม่ใช่ผู้ดูแลระบบ' });
       socket.emit('next-queue', true);
     }
 
-    function Cutoff() {
-      if (!isAdmin()) {
-        Swal.fire({ icon: 'error', title: 'ไม่อนุญาต', text: 'คุณไม่ใช่ผู้ดูแลระบบ' });
-        return;
-      }
+    function toggleCutoff() {
+      if (!isAdmin()) return Swal.fire({ icon: 'error', title: 'ไม่อนุญาต', text: 'คุณไม่ใช่ผู้ดูแลระบบ' });
+      socket.emit('set-cutoff', !isCutoff);
+    }
 
-      isCutoff = !isCutoff;
-      document.body.classList.toggle('cutoff-mode', isCutoff);
-      socket.emit('set-cutoff', isCutoff);
+    function startStickerLoop() {
+      if (stickerInterval) return;
+      stickerInterval = setInterval(showRandomSticker, Math.random() * 2000 + 2500);
+    }
 
-      if (isCutoff) {
-        stickerInterval = setInterval(() => {
-          showRandomSticker();
-        }, Math.floor(Math.random() * 2000) + 2500);
-      } else {
-        clearInterval(stickerInterval);
-        stickerInterval = null;
-      }
+    function stopStickerLoop() {
+      clearInterval(stickerInterval);
+      stickerInterval = null;
     }
 
     function showRandomSticker() {
       const stickers = [
-        'https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExeWVtaDRsdDlmODEybTZlMGIwN2Rpc3k5d2k3dmZ4MGxsb3ZhcnRlcCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/NEvPzZ8bd1V4Y/giphy.gif',
-        'https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExNDdiZ3BuaGZidWMyc2o1ZW0ybzFuaTBmNXhwb3h5ZWN2d3lienpwZyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/Lopx9eUi34rbq/giphy.gif',
-        'https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExdDYwcHVqYWpudGE1azg0dHBkcW96MDA5MGt6czE4ZzBqZTJ6NHFuZyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/nxixvW5krNTKLVOKDp/giphy.gif',
-        'https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExZXJkbXZlazEwcGRvOWR1dTA5c3gzOG9xaHhsdTVob2h0eDE3NWs3ZiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/QMHoU66sBXqqLqYvGO/giphy.gif',
-        'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNmVxcjhiMnZiMGZjOWZqNTIwbDFpMzBvbDE1ejdsdHFoYmdzemk0MCZlcD12MV9naWZzX3NlYXJjaCZjdD1n/kd9BlRovbPOykLBMqX/giphy.gif',
-        'https://i.gifer.com/FPm.gif','https://i.gifer.com/7Fm8.gif','https://i.gifer.com/ArlX.gif'
+        'https://i.gifer.com/FPm.gif',
+        'https://i.gifer.com/7Fm8.gif',
+        'https://i.gifer.com/ArlX.gif'
       ];
-      const chosen = stickers[Math.floor(Math.random() * stickers.length)];
-
       const img = document.createElement('img');
-      img.src = chosen;
+      img.src = stickers[Math.floor(Math.random() * stickers.length)];
       img.className = 'floating-sticker';
-
-      const x = Math.random() * window.innerWidth * 0.8;
-      const y = Math.random() * window.innerHeight * 0.6;
-      img.style.left = `${x}px`;
-      img.style.top = `${y}px`;
-
+      img.style.left = `${Math.random() * window.innerWidth * 0.8}px`;
+      img.style.top = `${Math.random() * window.innerHeight * 0.6}px`;
       document.body.appendChild(img);
-
       setTimeout(() => img.remove(), 3000);
     }
   </script>
