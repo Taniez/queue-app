@@ -161,6 +161,7 @@
 
   <script>
     let isCutoff = false;
+    let stickerInterval = null;
     const socket = io();
     let adminVerified = false;
 
@@ -206,9 +207,6 @@
 
         ul.appendChild(li);
         setTimeout(() => li.classList.add('show'), i * 150);
-
-        // แสดงสติกเกอร์ตอน cutoff
-        if (isCutoff) showRandomSticker();
       });
     });
 
@@ -228,10 +226,6 @@
       socket.emit('next-queue', true);
     }
 
-    function restoreQueue() {
-      socket.emit('restore-queue', isAdmin());
-    }
-
     function Cutoff() {
       if (!isAdmin()) {
         Swal.fire({ icon: 'error', title: 'ไม่อนุญาต', text: 'คุณไม่ใช่ผู้ดูแลระบบ' });
@@ -242,15 +236,24 @@
       document.body.classList.toggle('cutoff-mode', isCutoff);
       socket.emit('set-cutoff', isCutoff);
 
-      if (isCutoff) showRandomSticker();
+      if (isCutoff) {
+        stickerInterval = setInterval(() => {
+          showRandomSticker();
+        }, Math.floor(Math.random() * 2000) + 2500);
+      } else {
+        clearInterval(stickerInterval);
+        stickerInterval = null;
+      }
     }
 
     function showRandomSticker() {
       const stickers = [
-        'https://tenor.com/vKr4XPBmiOU.gif',
-        'https://tenor.com/lAVh6l6jry4.gif',
-        'https://tenor.com/view/crying-cat-meme-gif-24816008.gif',
-        'https://tenor.com/eoxfkCjBqSS.gif'
+        'https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExeWVtaDRsdDlmODEybTZlMGIwN2Rpc3k5d2k3dmZ4MGxsb3ZhcnRlcCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/NEvPzZ8bd1V4Y/giphy.gif',
+        'https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExNDdiZ3BuaGZidWMyc2o1ZW0ybzFuaTBmNXhwb3h5ZWN2d3lienpwZyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/Lopx9eUi34rbq/giphy.gif',
+        'https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExdDYwcHVqYWpudGE1azg0dHBkcW96MDA5MGt6czE4ZzBqZTJ6NHFuZyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/nxixvW5krNTKLVOKDp/giphy.gif',
+        'https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExZXJkbXZlazEwcGRvOWR1dTA5c3gzOG9xaHhsdTVob2h0eDE3NWs3ZiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/QMHoU66sBXqqLqYvGO/giphy.gif',
+        'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNmVxcjhiMnZiMGZjOWZqNTIwbDFpMzBvbDE1ejdsdHFoYmdzemk0MCZlcD12MV9naWZzX3NlYXJjaCZjdD1n/kd9BlRovbPOykLBMqX/giphy.gif',
+        'https://i.gifer.com/FPm.gif','https://i.gifer.com/7Fm8.gif','https://i.gifer.com/ArlX.gif'
       ];
       const chosen = stickers[Math.floor(Math.random() * stickers.length)];
 
