@@ -266,28 +266,72 @@ Swal.fire({
 });
 
 }
-    function showRandomSticker() {
-      const stickers = [
-        'https://i.gifer.com/FPm.gif',
-        'https://i.gifer.com/7Fm8.gif',
-        'https://i.gifer.com/ArlX.gif',
-        'https://i.gifer.com/Xrl7.gif',
-        'https://i.gifer.com/1Vv.gif',
-        'https://i.gifer.com/Cwgf.gif',
-        'https://i.gifer.com/4yd.gif',
-        'https://i.gifer.com/72vU.gif',
-        'https://i.gifer.com/NHBl.gif',
-        'https://i.gifer.com/PzUS.gif',
-        'https://i.gifer.com/EyoD.gif'
-      ];
-      const img = document.createElement('img');
-      img.src = stickers[Math.floor(Math.random() * stickers.length)];
-      img.className = 'floating-sticker';
-      img.style.left = `${Math.random() * window.innerWidth * 0.8}px`;
-      img.style.top = `${Math.random() * window.innerHeight * 0.6}px`;
-      document.body.appendChild(img);
-      setTimeout(() => img.remove(), 3000);
-    }
+function showRandomSticker() {
+
+const stickers = [
+  {
+    gif: 'https://i.gifer.com/FPm.gif',
+    sound: 'sounds/sigma.mp3'
+  },
+  {
+    gif: 'https://i.gifer.com/7Fm8.gif',
+    sound: 'sounds/tears-in-rain.mp3'
+  },
+  {
+    gif: 'https://i.gifer.com/ArlX.gif',
+    sound: 'sounds/untitled3_13.mp3'
+  },
+  {
+    gif: 'https://i.gifer.com/Xrl7.gif',
+    sound: 'sounds/aimaihwaelw.mp3'
+  },
+  {
+    gif: 'https://i.gifer.com/1Vv.gif',
+    sound: 'sounds/fahhhhhhhhhhhhhh.mp3'
+  },
+  {
+    gif: 'https://i.gifer.com/Cwgf.gif',
+    sound: 'sounds/michael-jackson-hee-hee.mp3'
+  },
+  {
+    gif: 'https://i.gifer.com/4yd.gif',
+    sound: 'sounds/yaa.mp3'
+  },
+  {
+    gif: 'https://i.gifer.com/72vU.gif',
+    sound: 'sounds/hehe.mp3'
+  },
+  {
+    gif: 'https://i.gifer.com/NHBl.gif',
+    sound: 'sounds/singsakdisiththi.mp3'
+  },
+  {
+    gif: 'https://i.gifer.com/PzUS.gif',
+    sound: 'sounds/yuuaimaihw-uuon.mp3'
+  },
+  {
+    gif: 'https://i.gifer.com/EyoD.gif',
+    sound: 'sounds/phmkh-othskhrabphii.mp3'
+  }
+];
+
+const sticker = stickers[Math.floor(Math.random() * stickers.length)];
+
+const img = document.createElement('img');
+img.src = sticker.gif;
+img.className = 'floating-sticker';
+img.style.left = `${Math.random() * window.innerWidth * 0.8}px`;
+img.style.top = `${Math.random() * window.innerHeight * 0.6}px`;
+
+document.body.appendChild(img);
+
+// เล่นเสียง
+const audio = new Audio(sticker.sound);
+audio.volume = 0.08; // 8%
+audio.play().catch(() => {});
+
+setTimeout(() => img.remove(), 3000);
+}
   </script>
 </body>
 </html>
