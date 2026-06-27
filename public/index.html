@@ -271,48 +271,66 @@ function showRandomSticker() {
 const stickers = [
   {
     gif: 'https://i.gifer.com/FPm.gif',
-    sound: 'sounds/sigma.mp3'
+    sound: 'sounds/sigma.mp3',
+    duration: 3000
   },
   {
     gif: 'https://i.gifer.com/7Fm8.gif',
-    sound: 'sounds/tears-in-rain.mp3'
+    sound: 'sounds/tears-in-rain.mp3',
+    duration: 3000
   },
   {
     gif: 'https://i.gifer.com/ArlX.gif',
-    sound: 'sounds/untitled3_13.mp3'
+    sound: 'sounds/untitled3_13.mp3',
+    duration: 3000
   },
   {
     gif: 'https://i.gifer.com/Xrl7.gif',
-    sound: 'sounds/aimaihwaelw.mp3'
+    sound: 'sounds/aimaihwaelw.mp3',
+    duration: 3000
   },
   {
     gif: 'https://i.gifer.com/1Vv.gif',
-    sound: 'sounds/fahhhhhhhhhhhhhh.mp3'
+    sound: 'sounds/fahhhhhhhhhhhhhh.mp3',
+    duration: 3000
   },
   {
     gif: 'https://i.gifer.com/Cwgf.gif',
-    sound: 'sounds/michael-jackson-hee-hee.mp3'
+    sound: 'sounds/michael-jackson-hee-hee.mp3',
+    duration: 3000
   },
   {
     gif: 'https://i.gifer.com/4yd.gif',
-    sound: 'sounds/yaa.mp3'
+    sound: 'sounds/yaa.mp3',
+    duration: 3000
   },
   {
     gif: 'https://i.gifer.com/72vU.gif',
-    sound: 'sounds/hehe.mp3'
+    sound: 'sounds/hehe.mp3',
+    duration: 3000
+
   },
   {
     gif: 'https://i.gifer.com/NHBl.gif',
-    sound: 'sounds/singsakdisiththi.mp3'
+    sound: 'sounds/singsakdisiththi.mp3',
+    duration: 3000
   },
   {
     gif: 'https://i.gifer.com/PzUS.gif',
-    sound: 'sounds/yuuaimaihw-uuon.mp3'
+    sound: 'sounds/yuuaimaihw-uuon.mp3',
+    duration: 3000
   },
   {
     gif: 'https://i.gifer.com/EyoD.gif',
-    sound: 'sounds/phmkh-othskhrabphii.mp3'
+    sound: 'sounds/phmkh-othskhrabphii.mp3',
+    duration: 3000
+  },
+  {
+    gif: 'https://tenor.com/qK3dGxV0iZd.gif',
+    sound: 'sad-conan.mp3',
+    duration: 3000
   }
+  
 ];
 
 const sticker = stickers[Math.floor(Math.random() * stickers.length)];
@@ -327,10 +345,16 @@ document.body.appendChild(img);
 
 // เล่นเสียง
 const audio = new Audio(sticker.sound);
-audio.volume = 0.50; // 8%
+audio.volume = 0.5;
+
 audio.play().catch(() => {});
 
-setTimeout(() => img.remove(), 3000);
+setTimeout(() => {
+    audio.pause();
+    audio.currentTime = 0;
+}, sticker.duration);
+
+setTimeout(() => img.remove(), 5000);
 }
   </script>
 </body>
