@@ -196,18 +196,26 @@ if(isValid){
 
 });
 
-    socket.on('queue-update', (queue) => {
-      const ul = document.getElementById('queueList');
-      ul.innerHTML = '';
-      queue.forEach((item, i) => {
-        const li = document.createElement('li');
-        li.textContent = `${i + 1}. ${item.name}`;
-        li.className = 'queue-item';
-        if (item.cutoff === 1 || item.cutoff === true) li.classList.add('cutoff');
-        ul.appendChild(li);
-        setTimeout(() => li.classList.add('show'), i * 150);
-      });
-    });
+socket.on('queue-update', (queue) => {
+
+console.log(queue);
+
+const ul = document.getElementById('queueList');
+ul.innerHTML = '';
+
+queue.forEach((item, i) => {
+
+    console.log(item);
+
+    const li = document.createElement('li');
+
+    li.textContent = `${i + 1}. ${item.name}`;
+
+    ul.appendChild(li);
+
+});
+
+});
 
     socket.on('cutoff-status', (state) => {
       isCutoff = state;

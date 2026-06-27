@@ -3,6 +3,7 @@ const http = require('http');
 const socketIO = require('socket.io');
 const mysql = require('mysql2');
 const fs = require('fs'); 
+
 const app = express();
 const server = http.createServer(app);
 const io = socketIO(server);
@@ -41,11 +42,7 @@ io.on('connection', (socket) => {
 
   emitQueue();
 
-  socket.on('join-queue', (name) => {
-    db.query("INSERT INTO queue (name) VALUES (?)", [name], (err) => {
-      if (!err) emitQueue();
-    });
-  });
+
   socket.on('set-cutoff', (newState) => {
     isCutoff = newState;
     io.emit('cutoff-status', isCutoff);
