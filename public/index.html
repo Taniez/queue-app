@@ -59,7 +59,7 @@
     button:hover  { background-color: #2980b9; }
     button:active { transform: scale(0.97); }
 
-    /* ── Admin gear button ── */
+    /* ── Admin gear button (top-right) ── */
     #adminBtn {
       position: fixed;
       top: 12px; right: 12px;
@@ -70,6 +70,24 @@
       z-index: 9999;
       max-width: none;
       box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+
+    /* ── Mute button (top-left) ── */
+    #muteBtn {
+      position: fixed;
+      top: 12px; left: 12px;
+      width: 48px; height: 48px;
+      border-radius: 50%;
+      padding: 0;
+      font-size: 20px;
+      z-index: 9999;
+      max-width: none;
+      background-color: #27ae60;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+
+    #muteBtn.muted {
+      background-color: #95a5a6;
     }
 
     /* ── Queue list ── */
@@ -226,8 +244,13 @@
   </style>
 </head>
 <body>
+  <!-- Mute toggle button (top-left) -->
+  <button id="muteBtn" onclick="toggleMute()" title="ปิด/เปิดเสียง">🔊</button>
+
+  <!-- Admin button (top-right) -->
   <button id="adminBtn" onclick="showAdminLogin()">⚙️</button>
-  <h1>คิวตรวจงาน 1.4.6</h1>
+
+  <h1>คิวตรวจงาน1.4.7</h1>
 
   <!-- User Panel -->
   <div id="userPanel">
@@ -266,23 +289,101 @@
   </div>
 
   <script>
-    let isCutoff = false;
+    // ════════════════════════════════════════════
+    //  STATE
+    // ════════════════════════════════════════════
+    let isCutoff       = false;
     let stickerInterval = null;
-    let adminId = null;
-    let adminVerified = false;
-    let adminName = '';
-    let prevFirstId = null;
+    let adminId        = null;
+    let adminVerified  = false;
+    let adminName      = '';
+    let prevFirstId    = null;
+    let prevMyIndex    = -1;
+
+    // ── Audio state ──
+    let isMuted         = false;
+    let almostAudio     = null;
+    let almostLoopTimer = null;
+    let myTurnAudio     = null;
+    let myTurnStopTimer = null;
 
     const SCORE_URL = 'https://score-system-nu.vercel.app/';
 
     const socket = io();
 
-    // ── Title update ──
+    // ════════════════════════════════════════════
+    //  MUTE
+    // ════════════════════════════════════════════
+    function toggleMute() {
+      isMuted = !isMuted;
+      const btn = document.getElementById('muteBtn');
+      btn.textContent = isMuted ? '🔇' : '🔊';
+      btn.classList.toggle('muted', isMuted);
+
+      if (isMuted) {
+        // หยุดเสียงทุกอย่างทันที
+        stopAlmostSound();
+        if (myTurnAudio) {
+          clearTimeout(myTurnStopTimer);
+          myTurnAudio.pause();
+          myTurnAudio.currentTime = 0;
+          myTurnAudio = null;
+        }
+      }
+    }
+
+    // ════════════════════════════════════════════
+    //  AUDIO HELPERS
+    // ════════════════════════════════════════════
+
+    // "เหลืออีก 1 คิว" – วนซ้ำจนกว่า TA จะกดตรวจ
+    function playAlmostSound() {
+      if (isMuted) return;
+      stopAlmostSound();
+      function loop() {
+        almostAudio = new Audio('aekaimr-daenkhn-iisaan.mp3');
+        almostAudio.volume = 0.8;
+        almostAudio.play().catch(() => {});
+        almostAudio.onended = () => {
+          almostLoopTimer = setTimeout(loop, 300);
+        };
+      }
+      loop();
+      if ('vibrate' in navigator) navigator.vibrate([200, 80, 200]);
+    }
+
+    function stopAlmostSound() {
+      clearTimeout(almostLoopTimer);
+      almostLoopTimer = null;
+      if (almostAudio) {
+        almostAudio.onended = null;
+        almostAudio.pause();
+        almostAudio.currentTime = 0;
+        almostAudio = null;
+      }
+    }
+
+    // "ถึงคิวคุณแล้ว!" – เล่นแค่ 5 วิแล้วหยุดเอง
+    function playMyTurnSound() {
+      if (isMuted) return;
+      clearTimeout(myTurnStopTimer);
+      if (myTurnAudio) { myTurnAudio.pause(); myTurnAudio.currentTime = 0; }
+      myTurnAudio = new Audio('sounds/china-ringing-phone (1).mp3');
+      myTurnAudio.volume = 0.9;
+      myTurnAudio.play().catch(() => {});
+      if ('vibrate' in navigator) navigator.vibrate([300, 100, 300, 100, 300]);
+      myTurnStopTimer = setTimeout(() => {
+        if (myTurnAudio) { myTurnAudio.pause(); myTurnAudio.currentTime = 0; myTurnAudio = null; }
+      }, 5000);
+    }
+
+    // ════════════════════════════════════════════
+    //  UI HELPERS
+    // ════════════════════════════════════════════
     function updateTitle(count) {
       document.title = count > 0 ? `(${count}) ระบบคิว` : 'ระบบคิว';
     }
 
-    // ── Tab switch ──
     function switchTab(name, btn) {
       document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -290,7 +391,9 @@
       btn.classList.add('active');
     }
 
-    // ── Admin login ──
+    // ════════════════════════════════════════════
+    //  ADMIN
+    // ════════════════════════════════════════════
     async function showAdminLogin() {
       const { value: password } = await Swal.fire({
         title: 'Admin Login',
@@ -313,8 +416,7 @@
       adminId = data.id;
       adminName = data.name;
       document.getElementById('adminButtons').style.display = 'block';
-      document.getElementById('clearBtn').style.display =
-        data.name === 'TA แทน' ? 'block' : 'none';
+      document.getElementById('clearBtn').style.display = data.name === 'TA แทน' ? 'block' : 'none';
       document.getElementById('userPanel').style.display = 'none';
 
       if (data.resumeIds && data.resumeIds.length > 0) {
@@ -329,30 +431,66 @@
       }
     });
 
-    // ── Queue update ──
+    function logoutAdmin() {
+      adminVerified = false;
+      adminId = null;
+      adminName = '';
+      document.getElementById('clearBtn').style.display = 'none';
+      socket.emit('logout-admin');
+      document.getElementById('adminButtons').style.display = 'none';
+      document.getElementById('userPanel').style.display = 'block';
+      Swal.fire({ icon: 'success', title: 'ออกจากระบบแล้ว', timer: 1000, showConfirmButton: false });
+    }
+
+    // ════════════════════════════════════════════
+    //  QUEUE
+    // ════════════════════════════════════════════
     socket.on('queue-update', (queue) => {
       const ul = document.getElementById('queueList');
       ul.innerHTML = '';
       updateTitle(queue.length);
 
       const myName = localStorage.getItem('myName') || '';
-      const index = queue.findIndex(q => q.name === myName);
+      const index  = queue.findIndex(q => q.name === myName);
       document.getElementById('myQueue').innerHTML =
         index === -1 ? '' : `🎉 ตอนนี้คุณอยู่คิวที่ <b>${index + 1}</b>`;
 
-      if (myName && queue.length > 0) {
-        const firstItem = queue[0];
-        if (firstItem.name === myName && prevFirstId !== firstItem.id) {
-          playNotifSound();
-          if ('vibrate' in navigator) navigator.vibrate([200, 100, 200]);
+      if (myName) {
+        const myItem       = index !== -1 ? queue[index] : null;
+        const isBeingChecked = myItem && myItem.status === 'checking';
+
+        // TA กดตรวจแล้ว → หยุดเสียงวนทันที
+        if (isBeingChecked) {
+          stopAlmostSound();
         }
-        prevFirstId = firstItem.id;
+
+        // ถึงคิวแล้ว (index 0, ยังไม่ถูกตรวจ)
+        if (index === 0 && !isBeingChecked && prevMyIndex !== 0) {
+          stopAlmostSound();
+          playMyTurnSound();
+          Swal.fire({
+            icon: 'success', title: '🎉 ถึงคิวคุณแล้ว!',
+            text: 'เตรียมตัวได้เลย', timer: 4000,
+            showConfirmButton: false, toast: true, position: 'top'
+          });
+        }
+        // เหลืออีก 1 คิว (index 1 และลดลงมาจาก > 1)
+        else if (index === 1 && prevMyIndex > 1) {
+          playAlmostSound();
+          Swal.fire({
+            icon: 'warning', title: '⏳ เหลืออีก 1 คิว!',
+            text: 'เตรียมงานให้พร้อมได้เลย', timer: 4000,
+            showConfirmButton: false, toast: true, position: 'top'
+          });
+        }
+
+        prevMyIndex = index;
       }
+
+      if (myName && queue.length > 0) prevFirstId = queue[0].id;
 
       queue.forEach((item, i) => {
         const li = document.createElement('li');
-
-        // Top row: number + name + checker badge
         const topRow = document.createElement('div');
         topRow.style.cssText = 'display:flex;align-items:center;width:100%;flex-wrap:wrap;gap:6px;';
 
@@ -362,18 +500,15 @@
 
         if (item.status === 'checking') {
           li.style.background = '#ffe066';
-
           if (item.checker_name) {
             const badge = document.createElement('span');
             badge.className = 'checker-badge';
             badge.textContent = `🔍 ${item.checker_name}`;
             topRow.appendChild(badge);
           }
-
           li.appendChild(topRow);
 
-          const isMine = item.checker == adminId;
-          if (adminVerified && isMine) {
+          if (adminVerified && item.checker == adminId) {
             const wrap = document.createElement('div');
             wrap.className = 'action-wrap';
 
@@ -382,7 +517,6 @@
             doneBtn.onclick = (e) => {
               e.stopPropagation();
               socket.emit('finish-one', item.id);
-              // ── Redirect to score system ──
               window.location.href = SCORE_URL;
             };
 
@@ -400,8 +534,7 @@
         }
 
         li.onclick = () => {
-          if (!adminVerified) return;
-          if (item.status === 'checking') return;
+          if (!adminVerified || item.status === 'checking') return;
           socket.emit('select-check', item.id);
         };
 
@@ -409,34 +542,45 @@
       });
     });
 
-    // ── History update ──
+    // ════════════════════════════════════════════
+    //  HISTORY
+    // ════════════════════════════════════════════
     socket.on('history-update', (history) => {
       const ul = document.getElementById('historyList');
       ul.innerHTML = '';
-      document.getElementById('historyCount').textContent =
-        `ตรวจไปแล้ว ${history.length} คน`;
-
-      const tabBtn = document.getElementById('historyTabBtn');
-      tabBtn.textContent = `🕐 ประวัติวันนี้ (${history.length})`;
+      document.getElementById('historyCount').textContent = `ตรวจไปแล้ว ${history.length} คน`;
+      document.getElementById('historyTabBtn').textContent = `🕐 ประวัติวันนี้ (${history.length})`;
 
       history.forEach((item, i) => {
         const li = document.createElement('li');
-        const nameSpan = document.createElement('span');
-        nameSpan.textContent = `${i + 1}. ${item.name}`;
-        const checkerSpan = document.createElement('span');
-        checkerSpan.className = 'hist-checker';
-        checkerSpan.textContent = item.checker_name ? `✓ ${item.checker_name}` : '✓';
-        li.appendChild(nameSpan);
-        li.appendChild(checkerSpan);
+        const ns = document.createElement('span'); ns.textContent = `${i + 1}. ${item.name}`;
+        const cs = document.createElement('span');
+        cs.className = 'hist-checker';
+        cs.textContent = item.checker_name ? `✓ ${item.checker_name}` : '✓';
+        li.appendChild(ns);
+        li.appendChild(cs);
         ul.appendChild(li);
       });
     });
 
+    // ════════════════════════════════════════════
+    //  MISC SOCKET EVENTS
+    // ════════════════════════════════════════════
     socket.on('queue-already-checking', () => {
       Swal.fire({ icon: 'warning', title: 'คิวนี้มีคนกำลังตรวจอยู่' });
     });
 
-    // ── Cutoff ──
+    socket.on('clear-denied', () => {
+      Swal.fire({ icon: 'error', title: 'ไม่มีสิทธิ์ล้างคิว' });
+    });
+
+    socket.on('join-denied',          () => Swal.fire({ icon: 'error',   title: 'ปิดรับคิวแล้ว' }));
+    socket.on('join-denied-cooldown', () => Swal.fire({ icon: 'warning', title: 'กรุณารอสักครู่', text: 'เพิ่งกดเข้าคิวไปแล้ว' }));
+    socket.on('join-error',     (msg) => Swal.fire({ icon: 'error',   title: 'เกิดข้อผิดพลาด', text: msg }));
+
+    // ════════════════════════════════════════════
+    //  CUTOFF
+    // ════════════════════════════════════════════
     socket.on('cutoff-status', (state) => {
       isCutoff = state;
       document.body.classList.toggle('cutoff-mode', isCutoff);
@@ -446,17 +590,14 @@
       else stopStickerLoop();
     });
 
-    // ── Join queue ──
-    socket.on('join-denied', () => {
-      Swal.fire({ icon: 'error', title: 'ปิดรับคิวแล้ว' });
-    });
-    socket.on('join-denied-cooldown', () => {
-      Swal.fire({ icon: 'warning', title: 'กรุณารอสักครู่', text: 'เพิ่งกดเข้าคิวไปแล้ว' });
-    });
-    socket.on('join-error', (msg) => {
-      Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: msg });
-    });
+    function toggleCutoff() {
+      if (!adminVerified) return;
+      socket.emit('set-cutoff', !isCutoff);
+    }
 
+    // ════════════════════════════════════════════
+    //  JOIN / CLEAR
+    // ════════════════════════════════════════════
     function joinQueue() {
       const name = document.getElementById('nameInput').value.trim();
       if (!name) return Swal.fire({ icon: 'error', title: 'ใส่ชื่อก่อน' });
@@ -481,79 +622,51 @@
       });
     }
 
-    socket.on('clear-denied', () => {
-      Swal.fire({ icon: 'error', title: 'ไม่มีสิทธิ์ล้างคิว' });
-    });
-
-    function toggleCutoff() {
-      if (!adminVerified) return;
-      socket.emit('set-cutoff', !isCutoff);
-    }
-
-    function logoutAdmin() {
-      adminVerified = false;
-      adminId = null;
-      adminName = '';
-      document.getElementById('clearBtn').style.display = 'none';
-      socket.emit('logout-admin');
-      document.getElementById('adminButtons').style.display = 'none';
-      document.getElementById('userPanel').style.display = 'block';
-      Swal.fire({ icon: 'success', title: 'ออกจากระบบแล้ว', timer: 1000, showConfirmButton: false });
-    }
-
-    // ── Notification sound ──
-    function playNotifSound() {
-      try {
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        [523, 659, 784].forEach((freq, i) => {
-          const osc = ctx.createOscillator();
-          const gain = ctx.createGain();
-          osc.connect(gain); gain.connect(ctx.destination);
-          osc.frequency.value = freq;
-          osc.type = 'sine';
-          gain.gain.setValueAtTime(0.3, ctx.currentTime + i * 0.15);
-          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.15 + 0.3);
-          osc.start(ctx.currentTime + i * 0.15);
-          osc.stop(ctx.currentTime + i * 0.15 + 0.3);
-        });
-      } catch(e) {}
-    }
-
-    // ── Sticker loop ──
+    // ════════════════════════════════════════════
+    //  FLOATING STICKERS
+    // ════════════════════════════════════════════
     function startStickerLoop() {
       if (stickerInterval) return;
       stickerInterval = setInterval(showRandomSticker, Math.random() * 2000 + 2500);
     }
+
     function stopStickerLoop() {
       clearInterval(stickerInterval);
       stickerInterval = null;
     }
+
     function showRandomSticker() {
       const stickers = [
-        { gif:'https://i.gifer.com/FPm.gif',  sound:'sounds/sigma.mp3', duration:3000 },
-        { gif:'https://i.gifer.com/7Fm8.gif', sound:'sounds/china-ringing-phone (1).mp3', duration:3000 },
-        { gif:'https://i.gifer.com/ArlX.gif', sound:'sounds/untitled3_13.mp3', duration:3000 },
-        { gif:'https://i.gifer.com/Xrl7.gif', sound:'sounds/aimaihwaelw.mp3', duration:3000 },
-        { gif:'https://i.gifer.com/1Vv.gif',  sound:'sounds/fahhhhhhhhhhhhhh.mp3', duration:3000 },
-        { gif:'https://i.gifer.com/Cwgf.gif', sound:'sounds/michael-jackson-hee-hee.mp3', duration:3000 },
-        { gif:'https://i.gifer.com/4yd.gif',  sound:'sounds/yaa.mp3', duration:3000 },
-        { gif:'https://i.gifer.com/72vU.gif', sound:'sounds/hehe.mp3', duration:3000 },
-        { gif:'https://i.gifer.com/NHBl.gif', sound:'sounds/singsakdisiththi.mp3', duration:3000 },
-        { gif:'https://i.gifer.com/PzUS.gif', sound:'sounds/yuuaimaihw-uuon.mp3', duration:10000 },
-        { gif:'https://i.gifer.com/EyoD.gif', sound:'sounds/phmkh-othskhrabphii.mp3', duration:3000 },
-        { gif:'https://i.gifer.com/HkwQ.gif', sound:'sounds/sad-conan.mp3', duration:5000 }
+        { gif: 'https://i.gifer.com/FPm.gif',  sound: 'sounds/sigma.mp3',                      duration: 3000 },
+        { gif: 'https://i.gifer.com/7Fm8.gif', sound: 'sounds/china-ringing-phone (1).mp3',    duration: 3000 },
+        { gif: 'https://i.gifer.com/ArlX.gif', sound: 'sounds/untitled3_13.mp3',               duration: 3000 },
+        { gif: 'https://i.gifer.com/Xrl7.gif', sound: 'sounds/aimaihwaelw.mp3',                duration: 3000 },
+        { gif: 'https://i.gifer.com/1Vv.gif',  sound: 'sounds/fahhhhhhhhhhhhhh.mp3',           duration: 3000 },
+        { gif: 'https://i.gifer.com/Cwgf.gif', sound: 'sounds/michael-jackson-hee-hee.mp3',    duration: 3000 },
+        { gif: 'https://i.gifer.com/4yd.gif',  sound: 'sounds/yaa.mp3',                        duration: 3000 },
+        { gif: 'https://i.gifer.com/72vU.gif', sound: 'sounds/hehe.mp3',                       duration: 3000 },
+        { gif: 'https://i.gifer.com/NHBl.gif', sound: 'sounds/singsakdisiththi.mp3',           duration: 3000 },
+        { gif: 'https://i.gifer.com/PzUS.gif', sound: 'sounds/yuuaimaihw-uuon.mp3',            duration: 10000 },
+        { gif: 'https://i.gifer.com/EyoD.gif', sound: 'sounds/phmkh-othskhrabphii.mp3',        duration: 3000 },
+        { gif: 'https://i.gifer.com/HkwQ.gif', sound: 'sounds/sad-conan.mp3',                  duration: 5000 }
       ];
-      const sticker = stickers[Math.floor(Math.random() * stickers.length)];
+
+      const s   = stickers[Math.floor(Math.random() * stickers.length)];
       const img = document.createElement('img');
-      img.src = sticker.gif;
+      img.src = s.gif;
       img.className = 'floating-sticker';
-      img.style.left = `${Math.random() * (window.innerWidth * 0.8)}px`;
+      img.style.left = `${Math.random() * (window.innerWidth  * 0.8)}px`;
       img.style.top  = `${Math.random() * (window.innerHeight * 0.6)}px`;
       document.body.appendChild(img);
-      const audio = new Audio(sticker.sound);
-      audio.volume = 0.5;
-      audio.play().catch(() => {});
-      setTimeout(() => { audio.pause(); audio.currentTime = 0; }, sticker.duration);
+
+      // เล่นเสียงเฉพาะตอนไม่ได้ mute
+      if (!isMuted) {
+        const audio = new Audio(s.sound);
+        audio.volume = 0.5;
+        audio.play().catch(() => {});
+        setTimeout(() => { audio.pause(); audio.currentTime = 0; }, s.duration);
+      }
+
       setTimeout(() => img.remove(), 5000);
     }
   </script>
