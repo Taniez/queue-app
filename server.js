@@ -40,22 +40,19 @@ const emitQueue = () => {
     if (!err) io.emit("queue-update", rows);
   });
 };
-
+let activeCheckingId = null;
 let isCutoff = false;
 io.on('connection', (socket) => {
   console.log("🔌 New client connected");
   socket.emit('cutoff-status', isCutoff);
 
   emitQueue();
-
   socket.on("priority-student", (id) => {
     db.query(`
       UPDATE queue
-      SET priority=1,
-          checking=1,
-          checker=?
+      SET priority=1
       WHERE id=?
-    `, [socket.id, id], () => emitQueue());
+    `, [id], () => emitQueue());
   });
 
 
@@ -97,7 +94,10 @@ io.on('connection', (socket) => {
           checker=NULL,
           priority=0
       WHERE status='checking'
-    `, emitQueue);
+    `, (err) => {
+      io.emit("checking-update", null);
+      emitQueue();
+    });
   });
 
   socket.on('restore-queue', (isAdmin) => {
@@ -112,13 +112,40 @@ io.on('connection', (socket) => {
     });
   });
 
+  socket.on("finish-one", (id) => {
+    db.query(`
+      UPDATE queue
+      SET status='done',
+          checker=NULL,
+          priority=0
+      WHERE id=?
+    `, [id], () => {
+      io.emit("checking-update", null); // 🔥 sync ทุก client
+      emitQueue();
+    });
+  });
   socket.on("select-check", (id) => {
+
+    // 🔓 ยกเลิกเลือก
+    if (!id) {
+      activeCheckingId = null;
+      io.emit("checking-update", null);
+      emitQueue();
+      return;
+    }
+  
+    // 🔒 กันเลือกซ้อน
+    if (activeCheckingId && activeCheckingId !== id) return;
+  
+    activeCheckingId = id;
+  
     db.query(`
       UPDATE queue
       SET status='checking'
-      WHERE id=? AND status IN ('waiting','checking')
+      WHERE id=? AND status='waiting'
     `, [id], (err) => {
       if (!err) {
+        io.emit("checking-update", activeCheckingId); // 🔥 sync ทุกเครื่อง
         emitQueue();
       }
     });
