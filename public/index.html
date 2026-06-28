@@ -119,7 +119,7 @@
   <button id="adminBtn" onclick="showAdminLogin()">
     ⚙️
 </button>
-  <h1>ระบบคิวออนไลน์1.3.1</h1>
+  <h1>ระบบคิวออนไลน์1.3.2</h1>
   <!-- <div class="admin-auth">
     <input type="password" id="adminPass" placeholder="รหัสผ่าน Admin" />
     <button onclick="checkAdmin()">ยืนยันตัวตน</button>
@@ -265,6 +265,7 @@ li.onclick = () => {
   const isSame = highlightedId === item.id;
 
   highlightedId = isSame ? null : item.id;
+  console.log("select-check id:", highlightedId);
 
   socket.emit("select-check", highlightedId);
 };
