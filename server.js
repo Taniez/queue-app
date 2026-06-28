@@ -50,15 +50,14 @@ const emitQueue = () => {
 // ✅ #9: ส่งประวัติคิวที่เสร็จแล้ววันนี้
 const emitHistory = () => {
   db.query(`
-    SELECT q.*, a.name AS checker_name
-    FROM queue q
-    LEFT JOIN admins a ON q.checker_done = a.id
-    WHERE q.status = 'done'
-      AND DATE(q.created_at) = CURDATE()
-    ORDER BY q.id DESC
+    SELECT *
+    FROM queue
+    WHERE status = 'done'
+      AND DATE(created_at) = CURDATE()
+    ORDER BY id DESC
     LIMIT 50
   `, (err, rows) => {
-    if (err) return;
+    if (err) { console.error('emitHistory error:', err); return; }
     io.emit('history-update', rows);
   });
 };
@@ -112,9 +111,13 @@ io.on('connection', (socket) => {
   socket.on('finish-check', () => {
     if (!requireAdmin(socket)) return;
     db.query(
-      'UPDATE queue SET status=\'done\', checker_done=checker, checker=NULL WHERE checker=?',
+      'UPDATE queue SET status=\'done\', checker=NULL WHERE checker=?',
       [socket.admin.id],
-      () => { emitQueue(); emitHistory(); }
+      (err, result) => {
+        if (err) { console.error('finish-check error:', err); return; }
+        emitQueue();
+        emitHistory();
+      }
     );
   });
 
@@ -127,7 +130,7 @@ io.on('connection', (socket) => {
       (err, rows) => {
         if (err || !rows.length) return;
         db.query(
-          'UPDATE queue SET status=\'waiting\', checker_done=NULL WHERE id=?',
+          'UPDATE queue SET status=\'waiting\' WHERE id=?',
           [rows[0].id],
           () => { emitQueue(); emitHistory(); }
         );
@@ -138,9 +141,16 @@ io.on('connection', (socket) => {
   socket.on('finish-one', (id) => {
     if (!requireAdmin(socket)) return;
     db.query(
-      'UPDATE queue SET status=\'done\', checker_done=checker, checker=NULL WHERE id=? AND checker=?',
+      'UPDATE queue SET status=\'done\', checker=NULL WHERE id=? AND checker=?',
       [id, socket.admin.id],
-      () => { emitQueue(); emitHistory(); }
+      (err, result) => {
+        if (err) { console.error('finish-one error:', err); return; }
+        if (result.affectedRows === 0) {
+          console.warn('finish-one: affectedRows=0, id=', id, 'checker=', socket.admin.id);
+        }
+        emitQueue();
+        emitHistory();
+      }
     );
   });
 
