@@ -119,7 +119,7 @@
   <button id="adminBtn" onclick="showAdminLogin()">
     ⚙️
 </button>
-  <h1>ระบบคิวออนไลน์1.3.5</h1>
+  <h1>ระบบคิวออนไลน์1.3.6</h1>
   <!-- <div class="admin-auth">
     <input type="password" id="adminPass" placeholder="รหัสผ่าน Admin" />
     <button onclick="checkAdmin()">ยืนยันตัวตน</button>
@@ -244,10 +244,8 @@ li.appendChild(text);
     if (highlightedId === item.id) {
       li.style.background = "#ffe066";
       
-      if (highlightedId === item.id && adminVerified) {
-      
       // ➕ เพิ่มปุ่ม "ตรวจเสร็จ"
-      const doneBtn = document.createElement("button");
+const doneBtn = document.createElement("button");
 
 doneBtn.textContent = "✔ ตรวจเสร็จ";
 
@@ -259,7 +257,7 @@ doneBtn.style.fontSize = "18px";
 doneBtn.style.flexShrink = "0";
 doneBtn.style.background = "#2ecc71";
 doneBtn.style.boxShadow = "none";
-doneBtn.style.borderRadius = "10px";}
+doneBtn.style.borderRadius = "10px";
 
       doneBtn.onclick = (e) => {
         e.stopPropagation(); // ไม่ให้ trigger click ของ li
