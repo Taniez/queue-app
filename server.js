@@ -40,7 +40,7 @@ const emitQueue = () => {
     FROM queue q
     LEFT JOIN admins a ON q.checker = a.id
     WHERE q.status IN ('waiting','checking')
-    ORDER BY q.priority DESC, q.id ASC
+    ORDER BY q.id ASC
   `, (err, rows) => {
     if (err) return;
     io.emit('queue-update', rows);
@@ -85,10 +85,6 @@ io.on('connection', (socket) => {
   emitQueue();
   emitHistory();
 
-  socket.on('priority-student', (id) => {
-    if (!requireAdmin(socket)) return;
-    db.query('UPDATE queue SET priority=1 WHERE id=?', [id], () => emitQueue());
-  });
 
   socket.on('set-cutoff', (newState) => {
     if (!requireAdmin(socket)) return;
@@ -101,7 +97,7 @@ io.on('connection', (socket) => {
     db.query(`
       SELECT id FROM queue
       WHERE status='waiting'
-      ORDER BY priority DESC, id ASC
+      ORDER BY id ASC
       LIMIT 1
     `, (err, rows) => {
       if (!rows || !rows.length) return;
@@ -116,7 +112,7 @@ io.on('connection', (socket) => {
   socket.on('finish-check', () => {
     if (!requireAdmin(socket)) return;
     db.query(
-      'UPDATE queue SET status=\'done\', checker_done=checker, checker=NULL, priority=0 WHERE checker=?',
+      'UPDATE queue SET status=\'done\', checker_done=checker, checker=NULL WHERE checker=?',
       [socket.admin.id],
       () => { emitQueue(); emitHistory(); }
     );
@@ -142,7 +138,7 @@ io.on('connection', (socket) => {
   socket.on('finish-one', (id) => {
     if (!requireAdmin(socket)) return;
     db.query(
-      'UPDATE queue SET status=\'done\', checker_done=checker, checker=NULL, priority=0 WHERE id=? AND checker=?',
+      'UPDATE queue SET status=\'done\', checker_done=checker, checker=NULL WHERE id=? AND checker=?',
       [id, socket.admin.id],
       () => { emitQueue(); emitHistory(); }
     );

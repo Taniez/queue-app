@@ -101,7 +101,7 @@
 </head>
 <body>
   <button id="adminBtn" onclick="showAdminLogin()">⚙️</button>
-  <h1>ระบบคิวออนไลน์1.4.2</h1>
+  <h1>ระบบคิวออนไลน์1.4.3</h1>
 
   <!-- User Panel -->
   <div id="userPanel">
@@ -266,20 +266,6 @@
         } else {
           li.appendChild(topRow);
 
-          // #6: ปุ่ม Priority สำหรับ admin (เฉพาะ status=waiting)
-          if (adminVerified && item.priority === 0) {
-            const prioBtn = document.createElement('button');
-            prioBtn.textContent = '⭐ ให้ priority';
-            prioBtn.style.cssText = 'margin:0;width:100%;font-size:18px;padding:10px;background:#f39c12;';
-            prioBtn.onclick = (e) => { e.stopPropagation(); socket.emit('priority-student', item.id); };
-            li.appendChild(prioBtn);
-          } else if (item.priority > 0) {
-            const badge = document.createElement('span');
-            badge.style.cssText = 'font-size:14px;color:#e67e22;font-weight:700;';
-            badge.textContent = '⭐ Priority';
-            li.appendChild(badge);
-          }
-        }
 
         li.onclick = () => {
           if (!adminVerified) return;
