@@ -128,42 +128,39 @@ io.on('connection', (socket) => {
   let activeCheckingId = null;
 
   socket.on("select-check", (id) => {
-  
-    // 🔓 ยกเลิก
     if (!id) {
       activeCheckingId = null;
-  
-      db.query(`
-        UPDATE queue
-        SET status='waiting', checker=NULL
-        WHERE status='checking'
-      `, () => {
-        io.emit("checking-update", null);
-        emitQueue();
-      });
-  
+      io.emit("checking-update", null);
+      emitQueue();
       return;
     }
   
-    // 🔒 กันกดซ้ำ
-    if (activeCheckingId === id) return;
-  
-    // 🔒 ถ้ามีคนอื่นกำลังตรวจอยู่
-    if (activeCheckingId && activeCheckingId !== id) return;
-  
-    activeCheckingId = id;
-  
-    db.query(`
+    db.query(
+      `
       UPDATE queue
       SET status='checking'
       WHERE id=? AND status='waiting'
-    `, [id], (err, result) => {
+      `,
+      [id],
+      (err, result) => {
+        if (err) {
+          console.error("SQL error:", err);
+          return;
+        }
   
-      if (result.affectedRows === 0) return;
+        if (!result || typeof result.affectedRows === "undefined") {
+          console.error("Invalid result:", result);
+          return;
+        }
   
-      io.emit("checking-update", activeCheckingId);
-      emitQueue();
-    });
+        if (result.affectedRows === 0) return;
+  
+        activeCheckingId = id;
+  
+        io.emit("checking-update", activeCheckingId);
+        emitQueue();
+      }
+    );
   });
 
   // ✅ แก้ตรงนี้ให้อยู่ใน scope เดียวกัน
