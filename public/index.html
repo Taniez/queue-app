@@ -101,7 +101,7 @@
 </head>
 <body>
   <button id="adminBtn" onclick="showAdminLogin()">⚙️</button>
-  <h1>ระบบคิวออนไลน์1.4.4</h1>
+  <h1>ระบบคิวออนไลน์1.4.5</h1>
 
   <!-- User Panel -->
   <div id="userPanel">
@@ -113,6 +113,7 @@
   <!-- Admin Buttons -->
   <div class="admin-controls" id="adminButtons" style="display:none;">
     <button onclick="toggleCutoff()" id="cutoffBtn">⛔ ปิดรับคิว</button>
+    <button id="clearBtn" onclick="clearQueue()" style="background:#c0392b;display:none;">🗑️ ล้างคิวทั้งหมด</button>
     <button onclick="logoutAdmin()" style="background:#e74c3c;">🚪 ออกจากระบบ</button>
   </div>
 
@@ -138,6 +139,7 @@
     let stickerInterval = null;
     let adminId = null;
     let adminVerified = false;
+    let adminName = '';
     let prevFirstId = null;   // #7: เช็คว่าคิวแรกเปลี่ยนไหม
 
     const socket = io();
@@ -174,7 +176,11 @@
       }
       adminVerified = true;
       adminId = data.id;
+      adminName = data.name;
       document.getElementById('adminButtons').style.display = 'block';
+      // แสดงปุ่มล้างคิวเฉพาะ TA แทน
+      document.getElementById('clearBtn').style.display =
+        data.name === 'TA แทน' ? 'block' : 'none';
       document.getElementById('userPanel').style.display = 'none';
 
       // ✅ BUG FIX: ถ้ามีคิวค้างอยู่หลัง refresh แจ้งเตือนให้รู้
@@ -338,6 +344,24 @@
       document.getElementById('nameInput').value = '';
     }
 
+    function clearQueue() {
+      Swal.fire({
+        icon: 'warning',
+        title: 'ล้างคิวทั้งหมด?',
+        text: 'ข้อมูลจะหายถาวร ไม่สามารถกู้คืนได้',
+        showCancelButton: true,
+        confirmButtonText: 'ล้างเลย',
+        cancelButtonText: 'ยกเลิก',
+        confirmButtonColor: '#c0392b'
+      }).then((result) => {
+        if (result.isConfirmed) socket.emit('clear-queue');
+      });
+    }
+
+    socket.on('clear-denied', () => {
+      Swal.fire({ icon: 'error', title: 'ไม่มีสิทธิ์ล้างคิว' });
+    });
+
     function toggleCutoff() {
       if (!adminVerified) return;
       socket.emit('set-cutoff', !isCutoff);
@@ -346,6 +370,8 @@
     function logoutAdmin() {
       adminVerified = false;
       adminId = null;
+      adminName = '';
+      document.getElementById('clearBtn').style.display = 'none';
       socket.emit('logout-admin');
       document.getElementById('adminButtons').style.display = 'none';
       document.getElementById('userPanel').style.display = 'block';

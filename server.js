@@ -221,12 +221,26 @@ io.on('connection', (socket) => {
               success: true,
               id: rows[0].id,
               name: rows[0].name,
-              resumeIds: (checking || []).map(r => r.id)  // id คิวที่ค้างอยู่
+              resumeIds: (checking || []).map(r => r.id)
             });
           }
         );
       }
     );
+  });
+
+  // ลบข้อมูลทั้งหมดในตาราง — เฉพาะ "TA แทน" เท่านั้น
+  socket.on('clear-queue', () => {
+    if (!requireAdmin(socket)) return;
+    if (socket.admin.name !== 'TA แทน') {
+      socket.emit('clear-denied');
+      return;
+    }
+    db.query('DELETE FROM queue', (err) => {
+      if (err) { console.error('clear-queue error:', err); return; }
+      emitQueue();
+      emitHistory();
+    });
   });
 
   socket.on('disconnect', () => {
