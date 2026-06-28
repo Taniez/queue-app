@@ -129,8 +129,15 @@
     <input type="text" id="nameInput" placeholder="ชื่อของคุณ" />
     <button onclick="joinQueue()">เข้าคิว</button>
   </div>
+  <h2 id="myQueue"></h2>
   <div class="admin-controls" id="adminButtons" style="display: none;">
     <button onclick="nextQueue()">เรียกคิวถัดไป (Admin เท่านั้น)</button>
+    <button onclick="finishCheck()">
+      ตรวจเสร็จ
+      </button>
+      <button onclick="selectCheck()">
+        เลือกคนตรวจ
+        </button>
     <button onclick="toggleCutoff()">Cutoff (Admin เท่านั้น)</button>
     <button onclick="logoutAdmin()">ออกจากระบบ</button>
   </div>
@@ -141,6 +148,31 @@
     let stickerInterval = null;
     const socket = io();
     let adminVerified = false;
+    function finishCheck(){
+
+socket.emit("finish-check");
+
+}
+function selectCheck(){
+
+Swal.fire({
+    title:"เลือกคิวที่จะตรวจ",
+    input:"number",
+    inputLabel:"ลำดับคิว",
+    inputAttributes:{
+        min:1
+    }
+}).then(result=>{
+
+    if(result.isConfirmed){
+
+        socket.emit("select-check", Number(result.value));
+
+    }
+
+});
+
+}
 
     function isAdmin() { return adminVerified; }
 
@@ -198,23 +230,38 @@ if(isValid){
 
 socket.on('queue-update', (queue) => {
 
-console.log(queue);
-
 const ul = document.getElementById('queueList');
 ul.innerHTML = '';
 
-queue.forEach((item, i) => {
+const myName = localStorage.getItem("myName") || "";
+const index = queue.findIndex(q => q.name === myName);
 
-    console.log(item);
+if(index === -1){
+    document.getElementById("myQueue").innerHTML = "";
+} else {
+    document.getElementById("myQueue").innerHTML =
+    `🎉 ตอนนี้คุณอยู่คิวที่ <b>${index + 1}</b>`;
+}
+
+queue.forEach((item, i) => {
 
     const li = document.createElement('li');
 
     li.textContent = `${i + 1}. ${item.name}`;
 
+    if(item.cutoff == 1){
+        li.style.background = "#ff6b6b";
+        li.style.color = "white";
+    }
+
+    if(item.status === "checking"){
+        li.style.background = "#ffd43b";
+        li.style.color = "#000";
+        li.innerHTML += " 📝 กำลังตรวจ";
+    }
+
     ul.appendChild(li);
-
 });
-
 });
 
     socket.on('cutoff-status', (state) => {
@@ -225,12 +272,26 @@ queue.forEach((item, i) => {
     });
 
     function joinQueue() {
-      const name = document.getElementById('nameInput').value;
-      if (name) {
-        socket.emit('join-queue', { name, isCutoff });
-        document.getElementById('nameInput').value = '';
-      }
-    }
+  const name = document.getElementById('nameInput').value.trim();
+  if (!name) return Swal.fire({ icon:'error', title:'ใส่ชื่อก่อน' });
+
+  localStorage.setItem("myName", name);
+
+  socket.emit('join-queue', {
+    name,
+    isCutoff
+  });
+
+  Swal.fire({
+    icon: 'success',
+    title: 'เข้าคิวสำเร็จ',
+    timer: 1200,
+    showConfirmButton: false
+  });
+
+  document.getElementById("myQueue").innerHTML = "⏳ กำลังเข้าคิว...";
+  document.getElementById('nameInput').value = '';
+}
 
     function nextQueue() {
       if (!isAdmin()) return Swal.fire({ icon: 'error', title: 'ไม่อนุญาต', text: 'คุณไม่ใช่ผู้ดูแลระบบ' });

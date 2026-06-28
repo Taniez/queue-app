@@ -31,16 +31,31 @@ app.use(express.static('public'));
 
 // 👉 ส่งข้อมูล queue ไปยัง client
 const emitQueue = () => {
-  db.query("SELECT * FROM queue WHERE status = 'waiting' ORDER BY id", (err, rows) => {
-    if (!err) io.emit('queue-update', rows);
+  db.query(`
+    SELECT *
+    FROM queue
+    WHERE status IN ('waiting','checking')
+    ORDER BY priority DESC, id ASC
+  `, (err, rows) => {
+    if (!err) io.emit("queue-update", rows);
   });
 };
+
 let isCutoff = false;
 io.on('connection', (socket) => {
   console.log("🔌 New client connected");
   socket.emit('cutoff-status', isCutoff);
 
   emitQueue();
+  socket.on("priority-student", (id) => {
+    db.query(`
+      UPDATE queue
+      SET priority=1,
+          checking=1,
+          checker=?
+      WHERE id=?
+    `, [socket.id, id], () => emitQueue());
+  });
 
 
   socket.on('set-cutoff', (newState) => {
@@ -56,11 +71,40 @@ io.on('connection', (socket) => {
     });
   });
 
-  socket.on('next-queue', (isAdmin) => {
+  socket.on("next-queue", (isAdmin) => {
     if (!isAdmin) return;
-    db.query("UPDATE queue SET status = 'called' WHERE status = 'waiting' ORDER BY id LIMIT 1", (err) => {
-      if (!err) emitQueue();
+  
+    db.query(`
+      SELECT *
+      FROM queue
+      WHERE status='waiting'
+        AND checking=0
+      ORDER BY priority DESC, id ASC
+      LIMIT 1
+    `, (err, rows) => {
+  
+      if (err || rows.length === 0) return;
+  
+      const target = rows[0];
+  
+      // 🔥 กันซ้ำ: ต้องเช็คอีกทีตอน update
+      db.query(`
+        UPDATE queue
+        SET checking=1,
+            checker=?
+        WHERE id=? AND checking=0
+      `, [socket.id, target.id], () => emitQueue());
+  
     });
+  });
+  socket.on("finish-check", () => {
+    db.query(`
+      UPDATE queue
+      SET status='done',
+          checking=0,
+          checker=NULL
+      WHERE checker=?
+    `, [socket.id], () => emitQueue());
   });
 
   socket.on('restore-queue', (isAdmin) => {
