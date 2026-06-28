@@ -119,7 +119,7 @@
   <button id="adminBtn" onclick="showAdminLogin()">
     ⚙️
 </button>
-  <h1>ระบบคิวออนไลน์1.2.8</h1>
+  <h1>ระบบคิวออนไลน์1.2.9</h1>
   <!-- <div class="admin-auth">
     <input type="password" id="adminPass" placeholder="รหัสผ่าน Admin" />
     <button onclick="checkAdmin()">ยืนยันตัวตน</button>
@@ -141,9 +141,6 @@
     <button onclick="finishCheck()">
       ตรวจเสร็จ
       </button>
-      <button onclick="selectCheck()">
-        เลือกคนตรวจ
-        </button>
     <button onclick="toggleCutoff()">Cutoff (Admin เท่านั้น)</button>
     <button onclick="logoutAdmin()">ออกจากระบบ</button>
   </div>
@@ -152,6 +149,7 @@
   <script>
     let isCutoff = false;
     let stickerInterval = null;
+    let highlightedId = null;
     const socket = io();
     let adminVerified = false;
     function finishCheck(){
@@ -159,26 +157,7 @@
 socket.emit("finish-check");
 
 }
-function selectCheck(){
 
-Swal.fire({
-    title:"เลือกคิวที่จะตรวจ",
-    input:"number",
-    inputLabel:"ลำดับคิว",
-    inputAttributes:{
-        min:1
-    }
-}).then(result=>{
-
-    if(result.isConfirmed){
-
-        socket.emit("select-check", Number(result.value));
-
-    }
-
-});
-
-}
 
     function isAdmin() { return adminVerified; }
 
@@ -236,33 +215,40 @@ if(isValid){
 });
 
 socket.on('queue-update', (queue) => {
+  const ul = document.getElementById('queueList');
+  ul.innerHTML = '';
 
-const ul = document.getElementById('queueList');
-ul.innerHTML = '';
+  const myName = localStorage.getItem("myName") || "";
+  const index = queue.findIndex(q => q.name === myName);
 
-const myName = localStorage.getItem("myName") || "";
-const index = queue.findIndex(q => q.name === myName);
+  document.getElementById("myQueue").innerHTML =
+    index === -1 ? "" : `🎉 ตอนนี้คุณอยู่คิวที่ <b>${index + 1}</b>`;
 
-if(index === -1){
-    document.getElementById("myQueue").innerHTML = "";
-} else {
-    document.getElementById("myQueue").innerHTML =
-    `🎉 ตอนนี้คุณอยู่คิวที่ <b>${index + 1}</b>`;
-}
+  queue.forEach((item, i) => {
+    const li = document.createElement('li');
 
-queue.forEach((item, i) => {
-  const li = document.createElement('li');
+    li.textContent = `${i + 1}. ${item.name}`;
 
-  li.textContent = `${i + 1}. ${item.name}`;
+    // 💛 ไฮไลต์ถ้าถูกเลือก
+    if (highlightedId === item.id) {
+      li.style.background = "#ffe066";
+    }
 
-  li.onclick = () => {
-    if (!adminVerified) return;
+    // 🔒 กดได้เฉพาะ admin
+    li.onclick = () => {
+      if (!adminVerified) return;
 
-    socket.emit("select-check", item.id);
-  };
+      highlightedId = item.id;
 
-  ul.appendChild(li);
-});
+      // เปลี่ยนสีทันทีฝั่ง client
+      li.style.background = "#ffe066";
+
+      // ส่งไป server
+      socket.emit("select-check", item.id);
+    };
+
+    ul.appendChild(li);
+  });
 });
 
 

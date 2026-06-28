@@ -116,10 +116,13 @@ io.on('connection', (socket) => {
     db.query(`
       UPDATE queue
       SET status='checking'
-      WHERE id=? AND status='waiting'
-    `, [id], emitQueue);
+      WHERE id=? AND status IN ('waiting','checking')
+    `, [id], (err) => {
+      if (!err) {
+        emitQueue();
+      }
+    });
   });
-
   // ✅ แก้ตรงนี้ให้อยู่ใน scope เดียวกัน
   socket.on('check-admin', (password) => {
     if (password === process.env.ADMIN_PASSWORD) {
