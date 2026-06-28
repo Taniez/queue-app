@@ -306,6 +306,23 @@
     let almostLoopTimer = null;
     let myTurnAudio     = null;
     let myTurnStopTimer = null;
+    let taAudio         = null;
+    let prevMyStatus    = null;   // ติดตาม status ก่อนหน้าของ user (null | 'waiting' | 'checking')
+
+    // ── TA sound map (checker_name → path ไฟล์เสียง) ──
+    // เปลี่ยน path ให้ตรงกับไฟล์เสียงของแต่ละ TA ได้เลย
+    const TA_SOUNDS = {
+      'TA 1':          'sounds/ta/ta1.mp3',
+      'TA อู๋':        'sounds/china-ringing-phone (1).mp3',
+      'TA แทน':        'sounds/aekaimr-daenkhn-iisaan.mp3',
+      'TA พี่อาร์มสุดหล่อ': 'sounds/ta/ta-arm.mp3',
+      'TA พี่เสือ':    'sounds/ta/ta-suea.mp3',
+      'TA พี่ออย':     'sounds/ta/ta-oi.mp3',
+      'TA พี่ไรเฟิ่ล': 'sounds/ta/ta-rifle.mp3',
+      'TA พี่อัส':     'sounds/ta/ta-as.mp3',
+      'TA พี่อู๋':     'sounds/ta/ta-pee-oo.mp3',
+      'TA พี่พลับ':    'sounds/ta/ta-plap.mp3',
+    };
 
     const SCORE_URL = 'https://score-system-nu.vercel.app/';
 
@@ -328,6 +345,11 @@
           myTurnAudio.pause();
           myTurnAudio.currentTime = 0;
           myTurnAudio = null;
+        }
+        if (taAudio) {
+          taAudio.pause();
+          taAudio.currentTime = 0;
+          taAudio = null;
         }
       }
     }
@@ -363,6 +385,17 @@
       }
     }
 
+    // เสียงเฉพาะตัวของแต่ละ TA – เล่นครั้งเดียวตอน user โดนเลือก
+    function playTASound(checkerName) {
+      if (isMuted) return;
+      const path = TA_SOUNDS[checkerName];
+      if (!path) return;
+      if (taAudio) { taAudio.pause(); taAudio.currentTime = 0; }
+      taAudio = new Audio(path);
+      taAudio.volume = 0.9;
+      taAudio.play().catch(() => {});
+    }
+
     // "ถึงคิวคุณแล้ว!" – เล่นแค่ 5 วิแล้วหยุดเอง
     function playMyTurnSound() {
       if (isMuted) return;
@@ -374,7 +407,7 @@
       if ('vibrate' in navigator) navigator.vibrate([300, 100, 300, 100, 300]);
       myTurnStopTimer = setTimeout(() => {
         if (myTurnAudio) { myTurnAudio.pause(); myTurnAudio.currentTime = 0; myTurnAudio = null; }
-      }, 10000);
+      }, 5000);
     }
 
     // ════════════════════════════════════════════
@@ -456,10 +489,26 @@
         index === -1 ? '' : `🎉 ตอนนี้คุณอยู่คิวที่ <b>${index + 1}</b>`;
 
       if (myName) {
-        const myItem       = index !== -1 ? queue[index] : null;
+        const myItem         = index !== -1 ? queue[index] : null;
         const isBeingChecked = myItem && myItem.status === 'checking';
+        const currentStatus  = isBeingChecked ? 'checking' : (index !== -1 ? 'waiting' : null);
 
-        // TA กดตรวจแล้ว → หยุดเสียงวนทันที
+        // TA เพิ่งกดตรวจ (เปลี่ยนจาก waiting → checking) → เล่นเสียง TA คนนั้น + หยุด almost
+        if (isBeingChecked && prevMyStatus !== 'checking') {
+          stopAlmostSound();
+          playTASound(myItem.checker_name);
+          Swal.fire({
+            icon: 'info',
+            title: `🔍 ${myItem.checker_name || 'TA'} กำลังตรวจงานคุณ!`,
+            text: 'เตรียมงานให้พร้อมเลย',
+            timer: 4000,
+            showConfirmButton: false,
+            toast: true,
+            position: 'top'
+          });
+        }
+
+        // TA กดตรวจแล้ว (ยังอยู่ใน checking) → คงหยุด almost ไว้
         if (isBeingChecked) {
           stopAlmostSound();
         }
@@ -484,7 +533,8 @@
           });
         }
 
-        prevMyIndex = index;
+        prevMyIndex  = index;
+        prevMyStatus = currentStatus;
       }
 
       if (myName && queue.length > 0) prevFirstId = queue[0].id;
