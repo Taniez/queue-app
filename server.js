@@ -47,6 +47,7 @@ io.on('connection', (socket) => {
   socket.emit('cutoff-status', isCutoff);
 
   emitQueue();
+
   socket.on("priority-student", (id) => {
     db.query(`
       UPDATE queue
@@ -76,32 +77,27 @@ io.on('connection', (socket) => {
   
     db.query(`
       SELECT * FROM queue
-      WHERE status='waiting' AND checking=0
+      WHERE status='waiting'
       ORDER BY priority DESC, id ASC
       LIMIT 1
     `, (err, rows) => {
-      if (err || rows.length === 0) return;
-  
-      const id = rows[0].id;
+      if (err || !rows.length) return;
   
       db.query(`
         UPDATE queue
-        SET checking=1,
-            status='checking',
-            checker=?
-        WHERE id=? AND checking=0
-      `, [socket.id, id], () => emitQueue());
+        SET status='checking'
+        WHERE id=?
+      `, [rows[0].id], emitQueue);
     });
   });
   socket.on("finish-check", () => {
     db.query(`
       UPDATE queue
       SET status='done',
-          checking=0,
-              checker=NULL,
-    priority=0
-      WHERE checker=?
-    `, [socket.id], () => emitQueue());
+          checker=NULL,
+          priority=0
+      WHERE status='checking'
+    `, emitQueue);
   });
 
   socket.on('restore-queue', (isAdmin) => {
@@ -117,15 +113,11 @@ io.on('connection', (socket) => {
   });
 
   socket.on("select-check", (id) => {
-    if (!id) return;
-  
     db.query(`
       UPDATE queue
-      SET checking = 1,
-          status = 'checking',
-          checker = ?
-      WHERE id = ? AND checking = 0
-    `, [socket.id, id], () => emitQueue());
+      SET status='checking'
+      WHERE id=? AND status='waiting'
+    `, [id], emitQueue);
   });
 
   // ✅ แก้ตรงนี้ให้อยู่ใน scope เดียวกัน
