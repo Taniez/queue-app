@@ -250,7 +250,7 @@
   <!-- Admin button (top-right) -->
   <button id="adminBtn" onclick="showAdminLogin()">⚙️</button>
 
-  <h1>คิวตรวจงาน1.4.7</h1>
+  <h1>คิวตรวจงาน</h1>
 
   <!-- User Panel -->
   <div id="userPanel">
@@ -374,7 +374,7 @@
       if ('vibrate' in navigator) navigator.vibrate([300, 100, 300, 100, 300]);
       myTurnStopTimer = setTimeout(() => {
         if (myTurnAudio) { myTurnAudio.pause(); myTurnAudio.currentTime = 0; myTurnAudio = null; }
-      }, 5000);
+      }, 10000);
     }
 
     // ════════════════════════════════════════════
