@@ -13,108 +13,77 @@
       padding: 30px;
       text-align: center;
     }
-    h1 {
-      color: #2c3e50;
-      font-size: 3.5rem;
-      margin-bottom: 30px;
-    }
-    input[type="text"],
-    input[type="password"],
-    button {
-      width: 90vw;
-      max-width: 500px;
-      font-size: 28px;
-      padding: 20px 25px;
-      margin: 18px auto;
-      display: block;
-      border-radius: 12px;
-      border: 1px solid #ccc;
-      box-sizing: border-box;
+    h1 { color: #2c3e50; font-size: 3.5rem; margin-bottom: 30px; }
+    input[type="text"], input[type="password"], button {
+      width: 90vw; max-width: 500px; font-size: 28px;
+      padding: 20px 25px; margin: 18px auto; display: block;
+      border-radius: 12px; border: 1px solid #ccc; box-sizing: border-box;
     }
     button {
-      background-color: #3498db;
-      color: white;
-      border: none;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
-      font-weight: 600;
-      box-shadow: 0 4px 12px rgba(52, 152, 219, 0.5);
+      background-color: #3498db; color: white; border: none;
+      cursor: pointer; transition: background-color 0.3s ease;
+      font-weight: 600; box-shadow: 0 4px 12px rgba(52,152,219,0.5);
     }
-    button:hover {
-      background-color: #2980b9;
-      box-shadow: 0 6px 16px rgba(41, 128, 185, 0.6);
-    }
+    button:hover { background-color: #2980b9; box-shadow: 0 6px 16px rgba(41,128,185,0.6); }
     #queueList {
-      list-style: none;
-      padding: 0;
-      margin-top: 30px;
-      max-width: 520px;
-      margin-left: auto;
-      margin-right: auto;
+      list-style: none; padding: 0; margin-top: 30px;
+      max-width: 520px; margin-left: auto; margin-right: auto;
     }
     #queueList li {
-      background-color: #ecf0f1;
-      padding: 25px 30px;
-      margin: 12px auto;
-      border-radius: 14px;
-      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.12);
-      font-size: 28px;
-      box-sizing: border-box;
-      max-width: 480px;
-      font-weight: 600;
-    }
-    .admin-controls {
-      margin-top: 30px;
-    }
-    .admin-auth {
-      margin-top: 30px;
-    }
-    .admin-status {
-      font-weight: 700;
-      margin-top: 10px;
-      font-size: 22px;
-      min-height: 28px;
-    }
-    .admin-success { color: green; }
-    .admin-error { color: red; }
-    .queue-item {
-      opacity: 0;
-      transform: translateX(60px);
-      transition: opacity 0.6s ease, transform 0.6s ease;
-    }
-    .queue-item.show {
-      opacity: 1;
-      transform: translateX(0);
+      background-color: #ecf0f1; padding: 25px 30px; margin: 12px auto;
+      border-radius: 14px; box-shadow: 0 6px 15px rgba(0,0,0,0.12);
+      font-size: 28px; box-sizing: border-box; max-width: 480px; font-weight: 600;
     }
     .cutoff-mode { background-color: #fff5f5 !important; }
-    .queue-item.cutoff {
-      background-color: #ff6b6b !important;
-      color: white;
-    }
     .floating-sticker {
-      position: fixed;
-      width: 120px;
-      z-index: 9999;
-      pointer-events: none;
-      animation: floatUp 3s ease-out forwards;
+      position: fixed; width: 120px; z-index: 9999;
+      pointer-events: none; animation: floatUp 3s ease-out forwards;
     }
     @keyframes floatUp {
-      0% { opacity: 0; transform: translateY(50px) scale(0.8); }
-      20% { opacity: 1; transform: translateY(0px) scale(1); }
-      100% { opacity: 0; transform: translateY(-150px) scale(1.2) rotate(10deg); }
+      0%   { opacity:0; transform:translateY(50px) scale(0.8); }
+      20%  { opacity:1; transform:translateY(0px) scale(1); }
+      100% { opacity:0; transform:translateY(-150px) scale(1.2) rotate(10deg); }
     }
     #adminBtn {
-      position: fixed;
-      top: 12px;
-      right: 12px;
-      width: 52px;
-      height: 52px;
-      border-radius: 50%;
-      padding: 0;
-      font-size: 22px;
-      z-index: 9999;
+      position: fixed; top: 12px; right: 12px;
+      width: 52px; height: 52px; border-radius: 50%;
+      padding: 0; font-size: 22px; z-index: 9999;
     }
 
+    /* ── ป้ายชื่อ admin ที่กำลังตรวจ (#5) ── */
+    .checker-badge {
+      font-size: 14px; font-weight: 400; color: #555;
+      background: rgba(0,0,0,0.08); border-radius: 6px;
+      padding: 2px 8px; margin-left: 8px;
+    }
+
+    /* ── tab ประวัติ (#9) ── */
+    .tab-bar {
+      display: flex; justify-content: center; gap: 12px;
+      margin: 32px auto 0; max-width: 520px;
+    }
+    .tab-btn {
+      flex: 1; padding: 14px; font-size: 20px; border-radius: 10px;
+      background: #dfe6e9; color: #2c3e50; box-shadow: none;
+      margin: 0;
+    }
+    .tab-btn.active { background: #3498db; color: white; }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+    #historyList {
+      list-style: none; padding: 0; margin-top: 16px;
+      max-width: 520px; margin-left: auto; margin-right: auto;
+    }
+    #historyList li {
+      background: #dfe6e9; padding: 16px 24px; margin: 10px auto;
+      border-radius: 12px; font-size: 22px; font-weight: 500;
+      box-sizing: border-box; max-width: 480px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    #historyList li .hist-checker { font-size: 14px; color: #636e72; }
+    #historyCount { font-size: 1.1rem; color: #636e72; margin-top: 6px; }
+
+    /* ── Mobile ── */
     @media (max-width:768px) {
       body { padding: 16px; }
       h1 { font-size: 2rem; margin-top: 55px; margin-bottom: 20px; }
@@ -122,228 +91,323 @@
       input, button { width: 100%; max-width: none; font-size: 20px; padding: 16px; }
       #queueList { max-width: 100%; padding: 0; }
       #queueList li { max-width: none; width: 100%; padding: 18px; font-size: 22px; box-sizing: border-box; }
-      .queue-buttons { display: flex; gap: 10px; margin-top: 12px; }
-      .queue-buttons button { flex: 1; margin: 0; padding: 12px; font-size: 18px; }
       .admin-controls button { font-size: 20px; padding: 18px; }
       .floating-sticker { width: 80px; }
       #adminBtn { width: 48px; height: 48px; font-size: 20px; top: 10px; right: 10px; }
+      .tab-btn { font-size: 18px; padding: 12px; }
+      #historyList li { font-size: 18px; }
     }
   </style>
 </head>
 <body>
   <button id="adminBtn" onclick="showAdminLogin()">⚙️</button>
-  <h1>ระบบคิวออนไลน์1.4.1</h1>
+  <h1>ระบบคิวออนไลน์1.4.2</h1>
 
+  <!-- User Panel -->
   <div id="userPanel">
-    <div>
-      <input type="text" id="nameInput" placeholder="ชื่อของคุณ" />
-      <button onclick="joinQueue()">เข้าคิว</button>
-    </div>
+    <input type="text" id="nameInput" placeholder="ชื่อของคุณ" maxlength="50" />
+    <button onclick="joinQueue()">เข้าคิว</button>
     <h2 id="myQueue"></h2>
   </div>
 
-  <div id="adminPanel" style="display:none;">
-    <h3>Admin Mode</h3>
+  <!-- Admin Buttons -->
+  <div class="admin-controls" id="adminButtons" style="display:none;">
+    <button onclick="toggleCutoff()" id="cutoffBtn">⛔ ปิดรับคิว</button>
+    <button onclick="logoutAdmin()" style="background:#e74c3c;">🚪 ออกจากระบบ</button>
   </div>
 
-  <div class="admin-controls" id="adminButtons" style="display: none;">
-    <button onclick="toggleCutoff()">Cutoff (Admin เท่านั้น)</button>
-    <button onclick="logoutAdmin()">ออกจากระบบ</button>
+  <!-- Tabs -->
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('queue')">📋 คิวปัจจุบัน</button>
+    <button class="tab-btn" onclick="switchTab('history')" id="historyTabBtn">🕐 ประวัติวันนี้</button>
   </div>
 
-  <h2 style="font-size: 2.8rem; margin-top: 40px;">คิวปัจจุบัน</h2>
-  <ul id="queueList"></ul>
+  <!-- Tab: Queue -->
+  <div class="tab-panel active" id="tab-queue">
+    <ul id="queueList"></ul>
+  </div>
+
+  <!-- Tab: History (#9) -->
+  <div class="tab-panel" id="tab-history">
+    <p id="historyCount">—</p>
+    <ul id="historyList"></ul>
+  </div>
 
   <script>
     let isCutoff = false;
     let stickerInterval = null;
     let adminId = null;
+    let adminVerified = false;
+    let prevFirstId = null;   // #7: เช็คว่าคิวแรกเปลี่ยนไหม
 
     const socket = io();
-    let adminVerified = false;
 
-    function isAdmin() { return adminVerified; }
+    // ── #8: อัปเดต title tab ──
+    function updateTitle(count) {
+      document.title = count > 0 ? `(${count}) ระบบคิว` : 'ระบบคิว';
+    }
 
+    // ── Tab switch ──
+    function switchTab(name) {
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('tab-' + name).classList.add('active');
+      event.currentTarget.classList.add('active');
+    }
+
+    // ── Admin login ──
     async function showAdminLogin() {
       const { value: password } = await Swal.fire({
-        title: 'Admin Login',
-        input: 'password',
+        title: 'Admin Login', input: 'password',
         inputPlaceholder: 'กรอกรหัสผ่าน',
         inputAttributes: { autocapitalize: 'off', autocorrect: 'off' },
         showCancelButton: true,
-        confirmButtonText: 'เข้าสู่ระบบ',
-        cancelButtonText: 'ยกเลิก'
+        confirmButtonText: 'เข้าสู่ระบบ', cancelButtonText: 'ยกเลิก'
       });
-      if (password) {
-        socket.emit("check-admin", password);
-      }
+      if (password) socket.emit('check-admin', password);
     }
 
-    socket.on("admin-status", (data) => {
-      // ✅ BUG FIX 1: return ก่อนบรรทัด dead code ถูกลบออก + เช็ค !data หรือ !data.success แทน
+    socket.on('admin-status', (data) => {
       if (!data || !data.success) {
-        Swal.fire({ icon: "error", title: "รหัสผ่านไม่ถูกต้อง" });
+        Swal.fire({ icon: 'error', title: 'รหัสผ่านไม่ถูกต้อง' });
         return;
       }
-
       adminVerified = true;
-      adminId = data.id;   // ✅ BUG FIX 2: set adminId จาก server
+      adminId = data.id;
+      document.getElementById('adminButtons').style.display = 'block';
+      document.getElementById('userPanel').style.display = 'none';
 
-      Swal.fire({
-        icon: "success",
-        title: `ยินดีต้อนรับ ${data.name}`,
-        timer: 1200,
-        showConfirmButton: false
-      });
-
-      document.getElementById("adminButtons").style.display = "block";
-      document.getElementById("userPanel").style.display = "none";
+      // ✅ BUG FIX: ถ้ามีคิวค้างอยู่หลัง refresh แจ้งเตือนให้รู้
+      if (data.resumeIds && data.resumeIds.length > 0) {
+        Swal.fire({
+          icon: 'warning',
+          title: `ยินดีต้อนรับ ${data.name}`,
+          text: `มีคิวที่ค้างอยู่ ${data.resumeIds.length} คิว (กำลังตรวจอยู่ก่อน refresh)`,
+          confirmButtonText: 'รับทราบ'
+        });
+      } else {
+        Swal.fire({ icon: 'success', title: `ยินดีต้อนรับ ${data.name}`, timer: 1200, showConfirmButton: false });
+      }
     });
 
-    // ✅ BUG FIX 3: ย้าย join-denied ออกมาข้างนอก ไม่ให้ซ้อน listener ทุกครั้งที่กด joinQueue
-    socket.on("join-denied", () => {
-      Swal.fire({ icon: "error", title: "ปิดรับคิวแล้ว" });
-    });
-
+    // ── Queue update ──
     socket.on('queue-update', (queue) => {
       const ul = document.getElementById('queueList');
       ul.innerHTML = '';
 
-      const myName = localStorage.getItem("myName") || "";
-      const index = queue.findIndex(q => q.name === myName);
+      // #8: title tab
+      updateTitle(queue.length);
 
-      document.getElementById("myQueue").innerHTML =
-        index === -1 ? "" : `🎉 ตอนนี้คุณอยู่คิวที่ <b>${index + 1}</b>`;
+      const myName = localStorage.getItem('myName') || '';
+      const index = queue.findIndex(q => q.name === myName);
+      document.getElementById('myQueue').innerHTML =
+        index === -1 ? '' : `🎉 ตอนนี้คุณอยู่คิวที่ <b>${index + 1}</b>`;
+
+      // #7: เสียงแจ้งเตือนเมื่อขึ้นเป็นคิวแรก
+      if (myName && queue.length > 0) {
+        const firstItem = queue[0];
+        if (firstItem.name === myName && prevFirstId !== firstItem.id) {
+          playNotifSound();
+          if ('vibrate' in navigator) navigator.vibrate([200, 100, 200]);
+        }
+        prevFirstId = firstItem.id;
+      }
 
       queue.forEach((item, i) => {
-        const li = document.createElement("li");
+        const li = document.createElement('li');
+        li.style.display = 'flex';
+        li.style.flexDirection = 'column';
+        li.style.alignItems = 'flex-start';
+        li.style.gap = '10px';
 
-        // ✅ BUG FIX 4: เปลี่ยนเป็น column เพื่อให้ปุ่มอยู่ใต้ชื่อ ไม่แตก layout
-        li.style.display = "flex";
-        li.style.flexDirection = "column";
-        li.style.alignItems = "flex-start";
-        li.style.gap = "12px";
+        // ส่วนบน: ลำดับ + ชื่อ + badge admin (#5)
+        const topRow = document.createElement('div');
+        topRow.style.display = 'flex';
+        topRow.style.alignItems = 'center';
+        topRow.style.width = '100%';
 
-        const text = document.createElement("span");
+        const text = document.createElement('span');
         text.textContent = `${i + 1}. ${item.name}`;
-        text.style.flex = "1";
-        li.appendChild(text);
+        topRow.appendChild(text);
 
-        if (item.status === "checking") {
-          li.style.background = "#ffe066";
+        if (item.status === 'checking') {
+          li.style.background = '#ffe066';
+          // #5: แสดงชื่อ admin ที่กำลังตรวจ
+          if (item.checker_name) {
+            const badge = document.createElement('span');
+            badge.className = 'checker-badge';
+            badge.textContent = `🔍 ${item.checker_name}`;
+            topRow.appendChild(badge);
+          }
 
+          // ปุ่มของ admin เจ้าของคิว
           const isMine = item.checker == adminId;
-
           if (adminVerified && isMine) {
-            const wrap = document.createElement("div");
-            wrap.style.display = "flex";
-            wrap.style.gap = "10px";
-            wrap.style.justifyContent = "center";
-            wrap.style.width = "100%";
+            const wrap = document.createElement('div');
+            wrap.style.cssText = 'display:flex;gap:10px;width:100%;';
 
-            const doneBtn = document.createElement("button");
-            doneBtn.textContent = "✅ ตรวจเสร็จ";
-            doneBtn.style.margin = "0";
-            doneBtn.style.flex = "1";
-            doneBtn.onclick = (e) => {
-              e.stopPropagation();
-              socket.emit("finish-one", item.id);
-            };
+            const doneBtn = document.createElement('button');
+            doneBtn.textContent = '✅ ตรวจเสร็จ';
+            doneBtn.style.cssText = 'margin:0;flex:1;font-size:20px;padding:14px;';
+            doneBtn.onclick = (e) => { e.stopPropagation(); socket.emit('finish-one', item.id); };
 
-            const cancelBtn = document.createElement("button");
-            cancelBtn.textContent = "↩ ยกเลิก";
-            cancelBtn.style.margin = "0";
-            cancelBtn.style.flex = "1";
-            cancelBtn.style.background = "#999";
-            cancelBtn.onclick = (e) => {
-              e.stopPropagation();
-              socket.emit("cancel-check", item.id);
-            };
+            const cancelBtn = document.createElement('button');
+            cancelBtn.textContent = '↩ ยกเลิก';
+            cancelBtn.style.cssText = 'margin:0;flex:1;font-size:20px;padding:14px;background:#999;';
+            cancelBtn.onclick = (e) => { e.stopPropagation(); socket.emit('cancel-check', item.id); };
 
             wrap.appendChild(doneBtn);
             wrap.appendChild(cancelBtn);
+            li.appendChild(topRow);
             li.appendChild(wrap);
+          } else {
+            li.appendChild(topRow);
+          }
+        } else {
+          li.appendChild(topRow);
+
+          // #6: ปุ่ม Priority สำหรับ admin (เฉพาะ status=waiting)
+          if (adminVerified && item.priority === 0) {
+            const prioBtn = document.createElement('button');
+            prioBtn.textContent = '⭐ ให้ priority';
+            prioBtn.style.cssText = 'margin:0;width:100%;font-size:18px;padding:10px;background:#f39c12;';
+            prioBtn.onclick = (e) => { e.stopPropagation(); socket.emit('priority-student', item.id); };
+            li.appendChild(prioBtn);
+          } else if (item.priority > 0) {
+            const badge = document.createElement('span');
+            badge.style.cssText = 'font-size:14px;color:#e67e22;font-weight:700;';
+            badge.textContent = '⭐ Priority';
+            li.appendChild(badge);
           }
         }
 
         li.onclick = () => {
           if (!adminVerified) return;
-          if (item.status === "checking") return;
-          socket.emit("select-check", item.id);
+          if (item.status === 'checking') return;
+          socket.emit('select-check', item.id);
         };
 
         ul.appendChild(li);
       });
     });
 
-    socket.on("queue-already-checking", () => {
-      Swal.fire({ icon: "warning", title: "คิวนี้มีคนกำลังตรวจอยู่" });
+    // ── #9: ประวัติคิววันนี้ ──
+    socket.on('history-update', (history) => {
+      const ul = document.getElementById('historyList');
+      ul.innerHTML = '';
+      document.getElementById('historyCount').textContent =
+        `ตรวจไปแล้ว ${history.length} คน`;
+
+      // อัปเดต badge บน tab
+      const tabBtn = document.getElementById('historyTabBtn');
+      tabBtn.textContent = `🕐 ประวัติวันนี้ (${history.length})`;
+
+      history.forEach((item, i) => {
+        const li = document.createElement('li');
+        const nameSpan = document.createElement('span');
+        nameSpan.textContent = `${i + 1}. ${item.name}`;
+
+        const checkerSpan = document.createElement('span');
+        checkerSpan.className = 'hist-checker';
+        checkerSpan.textContent = item.checker_name ? `✓ ${item.checker_name}` : '✓';
+
+        li.appendChild(nameSpan);
+        li.appendChild(checkerSpan);
+        ul.appendChild(li);
+      });
     });
 
+    socket.on('queue-already-checking', () => {
+      Swal.fire({ icon: 'warning', title: 'คิวนี้มีคนกำลังตรวจอยู่' });
+    });
+
+    // ── Cutoff ──
     socket.on('cutoff-status', (state) => {
       isCutoff = state;
       document.body.classList.toggle('cutoff-mode', isCutoff);
+      const btn = document.getElementById('cutoffBtn');
+      if (btn) btn.textContent = isCutoff ? '✅ เปิดรับคิว' : '⛔ ปิดรับคิว';
       if (isCutoff) startStickerLoop();
       else stopStickerLoop();
+    });
+
+    // ── Join queue ──
+    socket.on('join-denied', () => {
+      Swal.fire({ icon: 'error', title: 'ปิดรับคิวแล้ว' });
+    });
+    socket.on('join-denied-cooldown', () => {
+      Swal.fire({ icon: 'warning', title: 'กรุณารอสักครู่', text: 'เพิ่งกดเข้าคิวไปแล้ว' });
+    });
+    socket.on('join-error', (msg) => {
+      Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: msg });
     });
 
     function joinQueue() {
       const name = document.getElementById('nameInput').value.trim();
       if (!name) return Swal.fire({ icon: 'error', title: 'ใส่ชื่อก่อน' });
-
-      localStorage.setItem("myName", name);
-      socket.emit("join-queue", { name });
-
+      localStorage.setItem('myName', name);
+      socket.emit('join-queue', { name });
       Swal.fire({ icon: 'success', title: 'เข้าคิวสำเร็จ', timer: 1200, showConfirmButton: false });
-      document.getElementById("myQueue").innerHTML = "⏳ กำลังเข้าคิว...";
+      document.getElementById('myQueue').innerHTML = '⏳ กำลังเข้าคิว...';
       document.getElementById('nameInput').value = '';
     }
 
-    function nextQueue() {
-      if (!isAdmin()) return Swal.fire({ icon: 'error', title: 'ไม่อนุญาต', text: 'คุณไม่ใช่ผู้ดูแลระบบ' });
-      socket.emit("next-queue");
-    }
-
     function toggleCutoff() {
-      if (!isAdmin()) return Swal.fire({ icon: 'error', title: 'ไม่อนุญาต', text: 'คุณไม่ใช่ผู้ดูแลระบบ' });
+      if (!adminVerified) return;
       socket.emit('set-cutoff', !isCutoff);
     }
 
     function logoutAdmin() {
       adminVerified = false;
       adminId = null;
-      socket.emit("logout-admin");
-      document.getElementById("adminButtons").style.display = "none";
-      document.getElementById("userPanel").style.display = "block";
+      socket.emit('logout-admin');
+      document.getElementById('adminButtons').style.display = 'none';
+      document.getElementById('userPanel').style.display = 'block';
       Swal.fire({ icon: 'success', title: 'ออกจากระบบแล้ว', timer: 1000, showConfirmButton: false });
     }
 
+    // ── #7: เสียงแจ้งเตือนเมื่อถึงคิว ──
+    function playNotifSound() {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        [523, 659, 784].forEach((freq, i) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain); gain.connect(ctx.destination);
+          osc.frequency.value = freq;
+          osc.type = 'sine';
+          gain.gain.setValueAtTime(0.3, ctx.currentTime + i * 0.15);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.15 + 0.3);
+          osc.start(ctx.currentTime + i * 0.15);
+          osc.stop(ctx.currentTime + i * 0.15 + 0.3);
+        });
+      } catch(e) {}
+    }
+
+    // ── Sticker loop ──
     function startStickerLoop() {
       if (stickerInterval) return;
       stickerInterval = setInterval(showRandomSticker, Math.random() * 2000 + 2500);
     }
-
     function stopStickerLoop() {
       clearInterval(stickerInterval);
       stickerInterval = null;
     }
-
     function showRandomSticker() {
       const stickers = [
-        { gif: 'https://i.gifer.com/FPm.gif', sound: 'sounds/sigma.mp3', duration: 3000 },
-        { gif: 'https://i.gifer.com/7Fm8.gif', sound: 'sounds/china-ringing-phone (1).mp3', duration: 3000 },
-        { gif: 'https://i.gifer.com/ArlX.gif', sound: 'sounds/untitled3_13.mp3', duration: 3000 },
-        { gif: 'https://i.gifer.com/Xrl7.gif', sound: 'sounds/aimaihwaelw.mp3', duration: 3000 },
-        { gif: 'https://i.gifer.com/1Vv.gif', sound: 'sounds/fahhhhhhhhhhhhhh.mp3', duration: 3000 },
-        { gif: 'https://i.gifer.com/Cwgf.gif', sound: 'sounds/michael-jackson-hee-hee.mp3', duration: 3000 },
-        { gif: 'https://i.gifer.com/4yd.gif', sound: 'sounds/yaa.mp3', duration: 3000 },
-        { gif: 'https://i.gifer.com/72vU.gif', sound: 'sounds/hehe.mp3', duration: 3000 },
-        { gif: 'https://i.gifer.com/NHBl.gif', sound: 'sounds/singsakdisiththi.mp3', duration: 3000 },
-        { gif: 'https://i.gifer.com/PzUS.gif', sound: 'sounds/yuuaimaihw-uuon.mp3', duration: 10000 },
-        { gif: 'https://i.gifer.com/EyoD.gif', sound: 'sounds/phmkh-othskhrabphii.mp3', duration: 3000 },
-        { gif: 'https://i.gifer.com/HkwQ.gif', sound: 'sounds/sad-conan.mp3', duration: 5000 }
+        { gif:'https://i.gifer.com/FPm.gif', sound:'sounds/sigma.mp3', duration:3000 },
+        { gif:'https://i.gifer.com/7Fm8.gif', sound:'sounds/china-ringing-phone (1).mp3', duration:3000 },
+        { gif:'https://i.gifer.com/ArlX.gif', sound:'sounds/untitled3_13.mp3', duration:3000 },
+        { gif:'https://i.gifer.com/Xrl7.gif', sound:'sounds/aimaihwaelw.mp3', duration:3000 },
+        { gif:'https://i.gifer.com/1Vv.gif', sound:'sounds/fahhhhhhhhhhhhhh.mp3', duration:3000 },
+        { gif:'https://i.gifer.com/Cwgf.gif', sound:'sounds/michael-jackson-hee-hee.mp3', duration:3000 },
+        { gif:'https://i.gifer.com/4yd.gif', sound:'sounds/yaa.mp3', duration:3000 },
+        { gif:'https://i.gifer.com/72vU.gif', sound:'sounds/hehe.mp3', duration:3000 },
+        { gif:'https://i.gifer.com/NHBl.gif', sound:'sounds/singsakdisiththi.mp3', duration:3000 },
+        { gif:'https://i.gifer.com/PzUS.gif', sound:'sounds/yuuaimaihw-uuon.mp3', duration:10000 },
+        { gif:'https://i.gifer.com/EyoD.gif', sound:'sounds/phmkh-othskhrabphii.mp3', duration:3000 },
+        { gif:'https://i.gifer.com/HkwQ.gif', sound:'sounds/sad-conan.mp3', duration:5000 }
       ];
-
       const sticker = stickers[Math.floor(Math.random() * stickers.length)];
       const img = document.createElement('img');
       img.src = sticker.gif;
@@ -351,7 +415,6 @@
       img.style.left = `${Math.random() * window.innerWidth * 0.8}px`;
       img.style.top = `${Math.random() * window.innerHeight * 0.6}px`;
       document.body.appendChild(img);
-
       const audio = new Audio(sticker.sound);
       audio.volume = 0.5;
       audio.play().catch(() => {});
