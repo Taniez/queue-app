@@ -124,17 +124,30 @@ io.on('connection', (socket) => {
       emitQueue();
     });
   });
+
   socket.on("select-check", (id) => {
+
+    console.log("select-check id:", id);
+   
 
     // 🔓 ยกเลิกเลือก
     if (!id) {
       activeCheckingId = null;
-      io.emit("checking-update", null);
-      emitQueue();
+  
+      db.query(`
+        UPDATE queue
+        SET status='waiting',
+            checker=NULL
+        WHERE status='checking'
+      `, () => {
+        io.emit("checking-update", null);
+        emitQueue();
+      });
+  
       return;
     }
   
-    // 🔒 กันเลือกซ้อน
+    // 🔒 ล็อคเลือกตัวเดียว
     if (activeCheckingId && activeCheckingId !== id) return;
   
     activeCheckingId = id;
@@ -143,13 +156,23 @@ io.on('connection', (socket) => {
       UPDATE queue
       SET status='checking'
       WHERE id=? AND status='waiting'
-    `, [id], (err) => {
-      if (!err) {
-        io.emit("checking-update", activeCheckingId); // 🔥 sync ทุกเครื่อง
-        emitQueue();
+    `, [id], (err, result) => {
+  
+      if (err) {
+        console.log(err);
+        return;
       }
+      console.log("affected:", result?.affectedRows);
+      if (result.affectedRows === 0) {
+        // ❌ ไม่ได้อัปเดต = ไม่มี waiting แล้ว
+        return;
+      }
+  
+      io.emit("checking-update", activeCheckingId);
+      emitQueue();
     });
   });
+
   // ✅ แก้ตรงนี้ให้อยู่ใน scope เดียวกัน
   socket.on('check-admin', (password) => {
     if (password === process.env.ADMIN_PASSWORD) {
