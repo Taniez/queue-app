@@ -106,7 +106,7 @@ io.on('connection', (socket) => {
 
   socket.on('restore-queue', (isAdmin) => {
     if (!isAdmin) return;
-    db.query("SELECT * FROM queue WHERE status = 'called' ORDER BY id DESC LIMIT 1", (err, rows) => {
+    db.query("SELECT * FROM queue WHERE status = 'done' ORDER BY id DESC LIMIT 1", (err, rows) => {
       if (!err && rows.length > 0) {
         const lastCalled = rows[0];
         db.query("UPDATE queue SET status = 'waiting' WHERE id = ?", [lastCalled.id], (err2) => {
@@ -126,6 +126,7 @@ io.on('connection', (socket) => {
           checker = ?
       WHERE id = ? AND checking = 0
     `, [socket.id, id], () => emitQueue());
+  });
 
   // ✅ แก้ตรงนี้ให้อยู่ใน scope เดียวกัน
   socket.on('check-admin', (password) => {
