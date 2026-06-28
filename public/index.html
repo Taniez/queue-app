@@ -250,7 +250,7 @@
   <!-- Admin button (top-right) -->
   <button id="adminBtn" onclick="showAdminLogin()">⚙️</button>
 
-  <h1>คิวตรวจงาน1.5.4</h1>
+  <h1>คิวตรวจงาน1.5.5</h1>
 
   <!-- User Panel -->
   <div id="userPanel">
@@ -299,6 +299,7 @@
     let adminName      = '';
     let prevFirstId    = null;
     let prevMyIndex    = -1;
+    let lastQueue      = [];   // cache queue ล่าสุดไว้ re-render หลัง login
 
     // ── Audio state ──
     let isMuted         = false;
@@ -314,15 +315,15 @@
     // vibrate   = pattern การสั่น [สั่น, หยุด, สั่น, หยุด, ...]  ms
     //             ใส่ [] หรือไม่ใส่ = ไม่สั่น
     const TA_SOUNDS = {
-      'TA 1':               { path: 'sounds/ta/ta1.mp3',       duration: 3000,  vibrate: [200, 100, 200] },
+      'TA 1':               { path: 'sounds/ta/ta1.mp3',       duration: 5000,  vibrate: [200, 100, 200] },
       'TA อู๋':             { path: 'sounds/ta/ta-oo.mp3',     duration: 5000,  vibrate: [500, 100, 500] },
-      'TA แทน':             { path: 'sounds/yuuaimaihw-uuon.mp3',    duration: 12000,  vibrate: [400, 80, 400, 80, 400,50,400,50,400, 80, 400,50,400,50,400] },
-      'TA พี่อาร์มสุดหล่อ':{ path: 'sounds/sigma.mp3',    duration: 7000,  vibrate: [100, 50, 100, 50, 100, 50, 100] },
-      'TA พี่เสือ':         { path: 'sounds/yaa.mp3',   duration: 5000,  vibrate: [800, 200, 800] },
+      'TA แทน':             { path: 'sounds/yuuaimaihw-uuon.mp3',    duration: 10000,  vibrate: [300, 80, 300, 80, 300, 300, 80, 3000] },
+      'TA พี่อาร์มสุดหล่อ':{ path: 'sounds/sigma.mp3',    duration: 5000,  vibrate: [100, 50, 100, 50, 100, 50, 100] },
+      'TA พี่เสือ':         { path: 'sounds/untitled3_13.mp3',   duration: 5000,  vibrate: [800, 200, 800] },
       'TA พี่ออย':          { path: 'sounds/singsakdisiththi.mp3',     duration: 5000,  vibrate: [150, 60, 150, 60, 150] },
-      'TA พี่ไรเฟิ่ล':     { path: 'sounds/michael-jackson-hee-hee.mp3',  duration: 5000,  vibrate: [50, 30, 50, 30, 50, 30, 50, 30, 50] },
-      'TA พี่อัส':          { path: 'sounds/untitled3_13.mp3',     duration: 5000, vibrate: [1000, 300, 1000] },
-      'TA พี่อู๋':          { path: 'sounds/china-ringing-phone (1).mp3', duration: 15000,  vibrate: [400, 100, 200, 100, 400] },
+      'TA พี่ไรเฟิ่ล':     { path: 'sounds/phmkh-othskhrabphii.mp3',  duration: 5000,  vibrate: [50, 30, 50, 30, 50, 30, 50, 30, 50] },
+      'TA พี่อัส':          { path: 'sounds/michael-jackson-hee-hee.mp3',     duration: 5000, vibrate: [1000, 300, 1000] },
+      'TA พี่อู๋':          { path: 'sounds/china-ringing-phone (1).mp3', duration: 10000,  vibrate: [400, 100, 200, 100, 400] },
       'TA พี่พลับ':         { path: 'sounds/aekaimr-daenkhn-iisaan.mp3',   duration: 5000,  vibrate: [600, 150, 600] },
     };
 
@@ -468,6 +469,9 @@
       document.getElementById('clearBtn').style.display = data.name === 'TA แทน' ? 'block' : 'none';
       document.getElementById('userPanel').style.display = 'none';
 
+      // re-render queue ทันทีด้วย adminId ใหม่ เพื่อให้ปุ่มตรวจเสร็จ/ยกเลิกโผล่ถูกต้อง
+      renderQueue(lastQueue);
+
       if (data.resumeIds && data.resumeIds.length > 0) {
         Swal.fire({
           icon: 'warning',
@@ -494,7 +498,7 @@
     // ════════════════════════════════════════════
     //  QUEUE
     // ════════════════════════════════════════════
-    socket.on('queue-update', (queue) => {
+    function renderQueue(queue) {
       const ul = document.getElementById('queueList');
       ul.innerHTML = '';
       updateTitle(queue.length);
@@ -574,7 +578,9 @@
           }
           li.appendChild(topRow);
 
-          if (adminVerified && item.checker == adminId) {
+          // เปรียบเทียบแบบ loose (==) รองรับกรณี server ส่ง id เป็น number หรือ string
+          if (adminVerified && item.checker != null && adminId != null &&
+              String(item.checker) === String(adminId)) {
             const wrap = document.createElement('div');
             wrap.className = 'action-wrap';
 
@@ -606,6 +612,11 @@
 
         ul.appendChild(li);
       });
+    }
+
+    socket.on('queue-update', (queue) => {
+      lastQueue = queue;          // cache ไว้ re-render หลัง login
+      renderQueue(queue);
     });
 
     // ════════════════════════════════════════════
