@@ -309,19 +309,21 @@
     let taAudio         = null;
     let prevMyStatus    = null;   // ติดตาม status ก่อนหน้าของ user (null | 'waiting' | 'checking')
 
-    // ── TA sound map (checker_name → path ไฟล์เสียง) ──
-    // เปลี่ยน path ให้ตรงกับไฟล์เสียงของแต่ละ TA ได้เลย
+    // ── TA sound map (checker_name → { path, duration ms, vibrate pattern }) ──
+    // duration  = ตัดเสียงหลังกี่ ms (0 = เล่นจนจบไฟล์เอง)
+    // vibrate   = pattern การสั่น [สั่น, หยุด, สั่น, หยุด, ...]  ms
+    //             ใส่ [] หรือไม่ใส่ = ไม่สั่น
     const TA_SOUNDS = {
-      'TA 1':          'sounds/michael-jackson-hee-hee.mp3',
-      'TA อู๋':        'sounds/china-ringing-phone (1).mp3',
-      'TA แทน':        'sounds/singsakdisiththi.mp3',
-      'TA พี่อาร์มสุดหล่อ': 'sounds/phmkh-othskhrabphii.mp3',
-      'TA พี่เสือ':    'sounds/sigma.mp3',
-      'TA พี่ออย':     'sounds/untitled3_13.mp3',
-      'TA พี่ไรเฟิ่ล': 'sounds/aekaimr-daenkhn-iisaan.mp3',
-      'TA พี่อัส':     'sounds/yuuaimaihw-uuon.mp3',
-      'TA พี่อู๋':     'sounds/aekaimr-daenkhn-iisaan.mp3',
-      'TA พี่พลับ':    'sounds/fahhhhhhhhhhhhhh.mp3',
+      'TA 1':               { path: 'sounds/ta/ta1.mp3',       duration: 3000,  vibrate: [200, 100, 200] },
+      'TA อู๋':             { path: 'sounds/ta/ta-oo.mp3',     duration: 5000,  vibrate: [500, 100, 500] },
+      'TA แทน':             { path: 'sounds/yuuaimaihw-uuon.mp3',    duration: 15000,  vibrate: [300, 80, 300, 80, 300,50,300,50,300] },
+      'TA พี่อาร์มสุดหล่อ':{ path: 'sounds/sigma.mp3',    duration: 7000,  vibrate: [100, 50, 100, 50, 100, 50, 100] },
+      'TA พี่เสือ':         { path: 'sounds/yaa.mp3',   duration: 5000,  vibrate: [800, 200, 800] },
+      'TA พี่ออย':          { path: 'sounds/singsakdisiththi.mp3',     duration: 5000,  vibrate: [150, 60, 150, 60, 150] },
+      'TA พี่ไรเฟิ่ล':     { path: 'sounds/michael-jackson-hee-hee.mp3',  duration: 5000,  vibrate: [50, 30, 50, 30, 50, 30, 50, 30, 50] },
+      'TA พี่อัส':          { path: 'sounds/untitled3_13.mp3',     duration: 5000, vibrate: [1000, 300, 1000] },
+      'TA พี่อู๋':          { path: 'sounds/china-ringing-phone (1).mp3', duration: 5000,  vibrate: [400, 100, 200, 100, 400] },
+      'TA พี่พลับ':         { path: 'sounds/aekaimr-daenkhn-iisaan.mp3',   duration: 5000,  vibrate: [600, 150, 600] },
     };
 
     const SCORE_URL = 'https://score-system-nu.vercel.app/';
@@ -347,6 +349,7 @@
           myTurnAudio = null;
         }
         if (taAudio) {
+          clearTimeout(taStopTimer);
           taAudio.pause();
           taAudio.currentTime = 0;
           taAudio = null;
@@ -386,14 +389,27 @@
     }
 
     // เสียงเฉพาะตัวของแต่ละ TA – เล่นครั้งเดียวตอน user โดนเลือก
+    let taStopTimer = null;
     function playTASound(checkerName) {
       if (isMuted) return;
-      const path = TA_SOUNDS[checkerName];
-      if (!path) return;
+      const entry = TA_SOUNDS[checkerName];
+      if (!entry) return;
+      // หยุดเสียง TA เดิมก่อน
+      clearTimeout(taStopTimer);
       if (taAudio) { taAudio.pause(); taAudio.currentTime = 0; }
-      taAudio = new Audio(path);
+      taAudio = new Audio(entry.path);
       taAudio.volume = 0.9;
       taAudio.play().catch(() => {});
+      // สั่นตาม pattern ของ TA แต่ละคน
+      if (entry.vibrate && entry.vibrate.length > 0 && 'vibrate' in navigator) {
+        navigator.vibrate(entry.vibrate);
+      }
+      // ตัดเสียงตาม duration ของ TA แต่ละคน
+      if (entry.duration > 0) {
+        taStopTimer = setTimeout(() => {
+          if (taAudio) { taAudio.pause(); taAudio.currentTime = 0; taAudio = null; }
+        }, entry.duration);
+      }
     }
 
     // "ถึงคิวคุณแล้ว!" – เล่นแค่ 5 วิแล้วหยุดเอง
@@ -407,7 +423,7 @@
       if ('vibrate' in navigator) navigator.vibrate([300, 100, 300, 100, 300]);
       myTurnStopTimer = setTimeout(() => {
         if (myTurnAudio) { myTurnAudio.pause(); myTurnAudio.currentTime = 0; myTurnAudio = null; }
-      }, 15000);
+      }, 5000);
     }
 
     // ════════════════════════════════════════════
