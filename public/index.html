@@ -250,7 +250,7 @@
   <!-- Admin button (top-right) -->
   <button id="adminBtn" onclick="showAdminLogin()">⚙️</button>
 
-  <h1>คิวตรวจงาน</h1>
+  <h1>คิวตรวจงาน1.5.0</h1>
 
   <!-- User Panel -->
   <div id="userPanel">
@@ -312,11 +312,11 @@
     // ── TA sound map (checker_name → path ไฟล์เสียง) ──
     // เปลี่ยน path ให้ตรงกับไฟล์เสียงของแต่ละ TA ได้เลย
     const TA_SOUNDS = {
-      'TA 1':          'sounds/ta/ta1.mp3',
+      'TA 1':          'sounds/michael-jackson-hee-hee.mp3',
       'TA อู๋':        'sounds/china-ringing-phone (1).mp3',
       'TA แทน':        'sounds/aekaimr-daenkhn-iisaan.mp3',
       'TA พี่อาร์มสุดหล่อ': 'sounds/ta/ta-arm.mp3',
-      'TA พี่เสือ':    'sounds/ta/ta-suea.mp3',
+      'TA พี่เสือ':    'sounds/yuuaimaihw-uuon.mp3',
       'TA พี่ออย':     'sounds/ta/ta-oi.mp3',
       'TA พี่ไรเฟิ่ล': 'sounds/ta/ta-rifle.mp3',
       'TA พี่อัส':     'sounds/ta/ta-as.mp3',
@@ -407,7 +407,7 @@
       if ('vibrate' in navigator) navigator.vibrate([300, 100, 300, 100, 300]);
       myTurnStopTimer = setTimeout(() => {
         if (myTurnAudio) { myTurnAudio.pause(); myTurnAudio.currentTime = 0; myTurnAudio = null; }
-      }, 5000);
+      }, 15000);
     }
 
     // ════════════════════════════════════════════
