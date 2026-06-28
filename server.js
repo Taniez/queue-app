@@ -125,19 +125,17 @@ io.on('connection', (socket) => {
     });
   });
 
+  let activeCheckingId = null;
+
   socket.on("select-check", (id) => {
-
-    console.log("select-check id:", id);
-   
-
-    // 🔓 ยกเลิกเลือก
+  
+    // 🔓 ยกเลิก
     if (!id) {
       activeCheckingId = null;
   
       db.query(`
         UPDATE queue
-        SET status='waiting',
-            checker=NULL
+        SET status='waiting', checker=NULL
         WHERE status='checking'
       `, () => {
         io.emit("checking-update", null);
@@ -147,7 +145,10 @@ io.on('connection', (socket) => {
       return;
     }
   
-    // 🔒 ล็อคเลือกตัวเดียว
+    // 🔒 กันกดซ้ำ
+    if (activeCheckingId === id) return;
+  
+    // 🔒 ถ้ามีคนอื่นกำลังตรวจอยู่
     if (activeCheckingId && activeCheckingId !== id) return;
   
     activeCheckingId = id;
@@ -158,15 +159,7 @@ io.on('connection', (socket) => {
       WHERE id=? AND status='waiting'
     `, [id], (err, result) => {
   
-      if (err) {
-        console.log(err);
-        return;
-      }
-      console.log("affected:", result?.affectedRows);
-      if (result.affectedRows === 0) {
-        // ❌ ไม่ได้อัปเดต = ไม่มี waiting แล้ว
-        return;
-      }
+      if (result.affectedRows === 0) return;
   
       io.emit("checking-update", activeCheckingId);
       emitQueue();
