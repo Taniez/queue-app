@@ -103,282 +103,182 @@
       20% { opacity: 1; transform: translateY(0px) scale(1); }
       100% { opacity: 0; transform: translateY(-150px) scale(1.2) rotate(10deg); }
     }
-    #adminBtn{
-    position:fixed;
-    top:12px;
-    right:12px;
+    #adminBtn {
+      position: fixed;
+      top: 12px;
+      right: 12px;
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      padding: 0;
+      font-size: 22px;
+      z-index: 9999;
+    }
 
-    width:52px;
-    height:52px;
-
-    border-radius:50%;
-    padding:0;
-
-    font-size:22px;
-
-    z-index:9999;
-}
-
-/* ===========================
-   Mobile
-=========================== */
-@media (max-width:768px){
-
-body{
-    padding:16px;
-}
-
-h1{
-    font-size:2rem;
-    margin-top:55px;
-    margin-bottom:20px;
-}
-
-h2{
-    font-size:1.5rem !important;
-}
-
-input,
-button{
-    width:100%;
-    max-width:none;
-    font-size:20px;
-    padding:16px;
-}
-
-#queueList{
-    max-width:100%;
-    padding:0;
-}
-
-#queueList li{
-    max-width:none;
-    width:100%;
-    padding:18px;
-    font-size:22px;
-    box-sizing:border-box;
-}
-
-.queue-buttons{
-    display:flex;
-    gap:10px;
-    margin-top:12px;
-}
-
-.queue-buttons button{
-    flex:1;
-    margin:0;
-    padding:12px;
-    font-size:18px;
-}
-
-.admin-controls button{
-    font-size:20px;
-    padding:18px;
-}
-
-.floating-sticker{
-    width:80px;
-}
-
-#adminBtn{
-    width:48px;
-    height:48px;
-    font-size:20px;
-    top:10px;
-    right:10px;
-}
-
-}
+    @media (max-width:768px) {
+      body { padding: 16px; }
+      h1 { font-size: 2rem; margin-top: 55px; margin-bottom: 20px; }
+      h2 { font-size: 1.5rem !important; }
+      input, button { width: 100%; max-width: none; font-size: 20px; padding: 16px; }
+      #queueList { max-width: 100%; padding: 0; }
+      #queueList li { max-width: none; width: 100%; padding: 18px; font-size: 22px; box-sizing: border-box; }
+      .queue-buttons { display: flex; gap: 10px; margin-top: 12px; }
+      .queue-buttons button { flex: 1; margin: 0; padding: 12px; font-size: 18px; }
+      .admin-controls button { font-size: 20px; padding: 18px; }
+      .floating-sticker { width: 80px; }
+      #adminBtn { width: 48px; height: 48px; font-size: 20px; top: 10px; right: 10px; }
+    }
   </style>
 </head>
 <body>
-  <button id="adminBtn" onclick="showAdminLogin()">
-    ⚙️
-</button>
-  <h1>ระบบคิวออนไลน์1.3.9</h1>
-  <!-- <div class="admin-auth">
-    <input type="password" id="adminPass" placeholder="รหัสผ่าน Admin" />
-    <button onclick="checkAdmin()">ยืนยันตัวตน</button>
-    <div id="adminStatus" class="admin-status"></div>
-  </div> -->
+  <button id="adminBtn" onclick="showAdminLogin()">⚙️</button>
+  <h1>ระบบคิวออนไลน์1.4.1</h1>
+
   <div id="userPanel">
     <div>
       <input type="text" id="nameInput" placeholder="ชื่อของคุณ" />
       <button onclick="joinQueue()">เข้าคิว</button>
     </div>
-  
     <h2 id="myQueue"></h2>
   </div>
+
   <div id="adminPanel" style="display:none;">
     <h3>Admin Mode</h3>
   </div>
-  <div class="admin-controls" id="adminButtons" style="display: none;">
 
+  <div class="admin-controls" id="adminButtons" style="display: none;">
     <button onclick="toggleCutoff()">Cutoff (Admin เท่านั้น)</button>
     <button onclick="logoutAdmin()">ออกจากระบบ</button>
   </div>
+
   <h2 style="font-size: 2.8rem; margin-top: 40px;">คิวปัจจุบัน</h2>
   <ul id="queueList"></ul>
-  
+
   <script>
     let isCutoff = false;
     let stickerInterval = null;
-   
-    
+    let adminId = null;
+
     const socket = io();
     let adminVerified = false;
-    function finishCheck(){
-
-socket.emit("finish-check");
-
-}
-
 
     function isAdmin() { return adminVerified; }
 
-    // function checkAdmin() {
-    //   const password = document.getElementById('adminPass').value;
-    //   socket.emit('check-admin', password);
-    //   document.getElementById('adminPass').value = '';
-    // }
-    async function showAdminLogin(){
+    async function showAdminLogin() {
+      const { value: password } = await Swal.fire({
+        title: 'Admin Login',
+        input: 'password',
+        inputPlaceholder: 'กรอกรหัสผ่าน',
+        inputAttributes: { autocapitalize: 'off', autocorrect: 'off' },
+        showCancelButton: true,
+        confirmButtonText: 'เข้าสู่ระบบ',
+        cancelButtonText: 'ยกเลิก'
+      });
+      if (password) {
+        socket.emit("check-admin", password);
+      }
+    }
 
-const { value: password } = await Swal.fire({
-    title: 'Admin Login',
-    input: 'password',
-    inputPlaceholder: 'กรอกรหัสผ่าน',
-    inputAttributes:{
-        autocapitalize:'off',
-        autocorrect:'off'
-    },
-    showCancelButton:true,
-    confirmButtonText:'เข้าสู่ระบบ',
-    cancelButtonText:'ยกเลิก'
-});
+    socket.on("admin-status", (data) => {
+      // ✅ BUG FIX 1: return ก่อนบรรทัด dead code ถูกลบออก + เช็ค !data หรือ !data.success แทน
+      if (!data || !data.success) {
+        Swal.fire({ icon: "error", title: "รหัสผ่านไม่ถูกต้อง" });
+        return;
+      }
 
-if(password){
-    socket.emit("check-admin", password);
-}
+      adminVerified = true;
+      adminId = data.id;   // ✅ BUG FIX 2: set adminId จาก server
 
-}
+      Swal.fire({
+        icon: "success",
+        title: `ยินดีต้อนรับ ${data.name}`,
+        timer: 1200,
+        showConfirmButton: false
+      });
 
-
-socket.on("admin-status",(isValid)=>{
-
-adminVerified=isValid;
-
-if(isValid){
-
-    Swal.fire({
-        icon:'success',
-        title:'เข้าสู่ระบบสำเร็จ',
-        timer:1200,
-        showConfirmButton:false
+      document.getElementById("adminButtons").style.display = "block";
+      document.getElementById("userPanel").style.display = "none";
     });
 
-    document.getElementById("adminButtons").style.display="block";
-    document.getElementById("userPanel").style.display="none";
-
-}else{
-
-    Swal.fire({
-        icon:'error',
-        title:'รหัสผ่านไม่ถูกต้อง'
+    // ✅ BUG FIX 3: ย้าย join-denied ออกมาข้างนอก ไม่ให้ซ้อน listener ทุกครั้งที่กด joinQueue
+    socket.on("join-denied", () => {
+      Swal.fire({ icon: "error", title: "ปิดรับคิวแล้ว" });
     });
 
-}
+    socket.on('queue-update', (queue) => {
+      const ul = document.getElementById('queueList');
+      ul.innerHTML = '';
 
-});
+      const myName = localStorage.getItem("myName") || "";
+      const index = queue.findIndex(q => q.name === myName);
 
-socket.on('queue-update', (queue) => {
-  const ul = document.getElementById('queueList');
-  ul.innerHTML = '';
+      document.getElementById("myQueue").innerHTML =
+        index === -1 ? "" : `🎉 ตอนนี้คุณอยู่คิวที่ <b>${index + 1}</b>`;
 
-  const myName = localStorage.getItem("myName") || "";
-  const index = queue.findIndex(q => q.name === myName);
+      queue.forEach((item, i) => {
+        const li = document.createElement("li");
 
-  document.getElementById("myQueue").innerHTML =
-    index === -1 ? "" : `🎉 ตอนนี้คุณอยู่คิวที่ <b>${index + 1}</b>`;
+        // ✅ BUG FIX 4: เปลี่ยนเป็น column เพื่อให้ปุ่มอยู่ใต้ชื่อ ไม่แตก layout
+        li.style.display = "flex";
+        li.style.flexDirection = "column";
+        li.style.alignItems = "flex-start";
+        li.style.gap = "12px";
 
-  queue.forEach((item, i) => {
-    const li = document.createElement("li");
+        const text = document.createElement("span");
+        text.textContent = `${i + 1}. ${item.name}`;
+        text.style.flex = "1";
+        li.appendChild(text);
 
-li.style.display = "flex";
-li.style.justifyContent = "space-between";
-li.style.alignItems = "center";
-li.style.gap = "12px";
+        if (item.status === "checking") {
+          li.style.background = "#ffe066";
 
-const text = document.createElement("span");
-text.textContent = `${i + 1}. ${item.name}`;
-text.style.flex = "1";
+          const isMine = item.checker == adminId;
 
-li.appendChild(text);
+          if (adminVerified && isMine) {
+            const wrap = document.createElement("div");
+            wrap.style.display = "flex";
+            wrap.style.gap = "10px";
+            wrap.style.justifyContent = "center";
+            wrap.style.width = "100%";
 
-    // 🟡 highlight
-    if (item.status === "checking") {
+            const doneBtn = document.createElement("button");
+            doneBtn.textContent = "✅ ตรวจเสร็จ";
+            doneBtn.style.margin = "0";
+            doneBtn.style.flex = "1";
+            doneBtn.onclick = (e) => {
+              e.stopPropagation();
+              socket.emit("finish-one", item.id);
+            };
 
-li.style.background = "#ffe066";
+            const cancelBtn = document.createElement("button");
+            cancelBtn.textContent = "↩ ยกเลิก";
+            cancelBtn.style.margin = "0";
+            cancelBtn.style.flex = "1";
+            cancelBtn.style.background = "#999";
+            cancelBtn.onclick = (e) => {
+              e.stopPropagation();
+              socket.emit("cancel-check", item.id);
+            };
 
-// เป็นของเราไหม
-const isMine = item.checker === socket.id;
+            wrap.appendChild(doneBtn);
+            wrap.appendChild(cancelBtn);
+            li.appendChild(wrap);
+          }
+        }
 
-if (adminVerified && isMine) {
+        li.onclick = () => {
+          if (!adminVerified) return;
+          if (item.status === "checking") return;
+          socket.emit("select-check", item.id);
+        };
 
-    const wrap = document.createElement("div");
-    wrap.style.display = "flex";
-    wrap.style.gap = "10px";
-    wrap.style.justifyContent = "center";
-    wrap.style.marginTop = "15px";
+        ul.appendChild(li);
+      });
+    });
 
-    const doneBtn = document.createElement("button");
-    doneBtn.textContent = "✅ ตรวจเสร็จ";
-    doneBtn.style.margin = "0";
-    doneBtn.style.width = "160px";
-
-    doneBtn.onclick = (e)=>{
-        e.stopPropagation();
-        socket.emit("finish-one", item.id);
-    };
-
-    const cancelBtn = document.createElement("button");
-    cancelBtn.textContent = "↩ ยกเลิก";
-    cancelBtn.style.margin = "0";
-    cancelBtn.style.width = "160px";
-    cancelBtn.style.background = "#999";
-
-    cancelBtn.onclick = (e)=>{
-        e.stopPropagation();
-        socket.emit("cancel-check", item.id);
-    };
-
-    wrap.appendChild(doneBtn);
-    wrap.appendChild(cancelBtn);
-
-    li.appendChild(wrap);
-
-}
-
-} 
-    let lastClick = 0;
-
-    li.onclick = () => {
-  if (!adminVerified) return;
-
-  socket.emit("select-check", item.id);
-};
-    ul.appendChild(li);
-});
-});
-
-socket.on("queue-already-checking", () => {
-
-Swal.fire({
-    icon: "warning",
-    title: "คิวนี้มีคนกำลังตรวจอยู่"
-});
-
-});
+    socket.on("queue-already-checking", () => {
+      Swal.fire({ icon: "warning", title: "คิวนี้มีคนกำลังตรวจอยู่" });
+    });
 
     socket.on('cutoff-status', (state) => {
       isCutoff = state;
@@ -388,35 +288,34 @@ Swal.fire({
     });
 
     function joinQueue() {
-  const name = document.getElementById('nameInput').value.trim();
-  if (!name) return Swal.fire({ icon:'error', title:'ใส่ชื่อก่อน' });
+      const name = document.getElementById('nameInput').value.trim();
+      if (!name) return Swal.fire({ icon: 'error', title: 'ใส่ชื่อก่อน' });
 
-  localStorage.setItem("myName", name);
+      localStorage.setItem("myName", name);
+      socket.emit("join-queue", { name });
 
-  socket.emit('join-queue', {
-    name,
-    isCutoff
-  });
-
-  Swal.fire({
-    icon: 'success',
-    title: 'เข้าคิวสำเร็จ',
-    timer: 1200,
-    showConfirmButton: false
-  });
-
-  document.getElementById("myQueue").innerHTML = "⏳ กำลังเข้าคิว...";
-  document.getElementById('nameInput').value = '';
-}
+      Swal.fire({ icon: 'success', title: 'เข้าคิวสำเร็จ', timer: 1200, showConfirmButton: false });
+      document.getElementById("myQueue").innerHTML = "⏳ กำลังเข้าคิว...";
+      document.getElementById('nameInput').value = '';
+    }
 
     function nextQueue() {
       if (!isAdmin()) return Swal.fire({ icon: 'error', title: 'ไม่อนุญาต', text: 'คุณไม่ใช่ผู้ดูแลระบบ' });
-      socket.emit('next-queue', true);
+      socket.emit("next-queue");
     }
 
     function toggleCutoff() {
       if (!isAdmin()) return Swal.fire({ icon: 'error', title: 'ไม่อนุญาต', text: 'คุณไม่ใช่ผู้ดูแลระบบ' });
       socket.emit('set-cutoff', !isCutoff);
+    }
+
+    function logoutAdmin() {
+      adminVerified = false;
+      adminId = null;
+      socket.emit("logout-admin");
+      document.getElementById("adminButtons").style.display = "none";
+      document.getElementById("userPanel").style.display = "block";
+      Swal.fire({ icon: 'success', title: 'ออกจากระบบแล้ว', timer: 1000, showConfirmButton: false });
     }
 
     function startStickerLoop() {
@@ -429,111 +328,36 @@ Swal.fire({
       stickerInterval = null;
     }
 
-    function logoutAdmin(){
+    function showRandomSticker() {
+      const stickers = [
+        { gif: 'https://i.gifer.com/FPm.gif', sound: 'sounds/sigma.mp3', duration: 3000 },
+        { gif: 'https://i.gifer.com/7Fm8.gif', sound: 'sounds/china-ringing-phone (1).mp3', duration: 3000 },
+        { gif: 'https://i.gifer.com/ArlX.gif', sound: 'sounds/untitled3_13.mp3', duration: 3000 },
+        { gif: 'https://i.gifer.com/Xrl7.gif', sound: 'sounds/aimaihwaelw.mp3', duration: 3000 },
+        { gif: 'https://i.gifer.com/1Vv.gif', sound: 'sounds/fahhhhhhhhhhhhhh.mp3', duration: 3000 },
+        { gif: 'https://i.gifer.com/Cwgf.gif', sound: 'sounds/michael-jackson-hee-hee.mp3', duration: 3000 },
+        { gif: 'https://i.gifer.com/4yd.gif', sound: 'sounds/yaa.mp3', duration: 3000 },
+        { gif: 'https://i.gifer.com/72vU.gif', sound: 'sounds/hehe.mp3', duration: 3000 },
+        { gif: 'https://i.gifer.com/NHBl.gif', sound: 'sounds/singsakdisiththi.mp3', duration: 3000 },
+        { gif: 'https://i.gifer.com/PzUS.gif', sound: 'sounds/yuuaimaihw-uuon.mp3', duration: 10000 },
+        { gif: 'https://i.gifer.com/EyoD.gif', sound: 'sounds/phmkh-othskhrabphii.mp3', duration: 3000 },
+        { gif: 'https://i.gifer.com/HkwQ.gif', sound: 'sounds/sad-conan.mp3', duration: 5000 }
+      ];
 
-adminVerified=false;
+      const sticker = stickers[Math.floor(Math.random() * stickers.length)];
+      const img = document.createElement('img');
+      img.src = sticker.gif;
+      img.className = 'floating-sticker';
+      img.style.left = `${Math.random() * window.innerWidth * 0.8}px`;
+      img.style.top = `${Math.random() * window.innerHeight * 0.6}px`;
+      document.body.appendChild(img);
 
-document.getElementById("adminButtons").style.display="none";
-document.getElementById("userPanel").style.display="block";
-
-Swal.fire({
-    icon:'success',
-    title:'ออกจากระบบแล้ว',
-    timer:1000,
-    showConfirmButton:false
-});
-
-}
-function showRandomSticker() {
-
-const stickers = [
-  {
-    gif: 'https://i.gifer.com/FPm.gif',
-    sound: 'sounds/sigma.mp3',
-    duration: 3000
-  },
-  {
-    gif: 'https://i.gifer.com/7Fm8.gif',
-    sound: 'sounds/china-ringing-phone (1).mp3',
-    duration: 3000
-  },
-  {
-    gif: 'https://i.gifer.com/ArlX.gif',
-    sound: 'sounds/untitled3_13.mp3',
-    duration: 3000
-  },
-  {
-    gif: 'https://i.gifer.com/Xrl7.gif',
-    sound: 'sounds/aimaihwaelw.mp3',
-    duration: 3000
-  },
-  {
-    gif: 'https://i.gifer.com/1Vv.gif',
-    sound: 'sounds/fahhhhhhhhhhhhhh.mp3',
-    duration: 3000
-  },
-  {
-    gif: 'https://i.gifer.com/Cwgf.gif',
-    sound: 'sounds/michael-jackson-hee-hee.mp3',
-    duration: 3000
-  },
-  {
-    gif: 'https://i.gifer.com/4yd.gif',
-    sound: 'sounds/yaa.mp3',
-    duration: 3000
-  },
-  {
-    gif: 'https://i.gifer.com/72vU.gif',
-    sound: 'sounds/hehe.mp3',
-    duration: 3000
-
-  },
-  {
-    gif: 'https://i.gifer.com/NHBl.gif',
-    sound: 'sounds/singsakdisiththi.mp3',
-    duration: 3000
-  },
-  {
-    gif: 'https://i.gifer.com/PzUS.gif',
-    sound: 'sounds/yuuaimaihw-uuon.mp3',
-    duration: 10000
-  },
-  {
-    gif: 'https://i.gifer.com/EyoD.gif',
-    sound: 'sounds/phmkh-othskhrabphii.mp3',
-    duration: 3000
-  },
-  {
-    gif: 'https://i.gifer.com/HkwQ.gif',
-    sound: 'sounds/sad-conan.mp3',
-    duration: 5000
-  }
-  
-];
-
-const sticker = stickers[Math.floor(Math.random() * stickers.length)];
-
-const img = document.createElement('img');
-img.src = sticker.gif;
-img.className = 'floating-sticker';
-img.style.left = `${Math.random() * window.innerWidth * 0.8}px`;
-img.style.top = `${Math.random() * window.innerHeight * 0.6}px`;
-
-document.body.appendChild(img);
-
-// เล่นเสียง
-const audio = new Audio(sticker.sound);
-audio.volume = 0.5;
-
-audio.play().catch(() => {});
-
-setTimeout(() => {
-    audio.pause();
-    audio.currentTime = 0;
-}, sticker.duration);
-
-setTimeout(() => img.remove(), 5000);
-}
+      const audio = new Audio(sticker.sound);
+      audio.volume = 0.5;
+      audio.play().catch(() => {});
+      setTimeout(() => { audio.pause(); audio.currentTime = 0; }, sticker.duration);
+      setTimeout(() => img.remove(), 5000);
+    }
   </script>
 </body>
 </html>
