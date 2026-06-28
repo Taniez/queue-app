@@ -265,6 +265,8 @@ queue.forEach((item, i) => {
 });
 });
 
+
+
     socket.on('cutoff-status', (state) => {
       isCutoff = state;
       document.body.classList.toggle('cutoff-mode', isCutoff);

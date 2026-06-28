@@ -87,6 +87,7 @@ io.on('connection', (socket) => {
       db.query(`
         UPDATE queue
         SET checking=1,
+            status='checking',
             checker=?
         WHERE id=? AND checking=0
       `, [socket.id, id], () => emitQueue());
@@ -97,7 +98,8 @@ io.on('connection', (socket) => {
       UPDATE queue
       SET status='done',
           checking=0,
-          checker=NULL
+              checker=NULL,
+    priority=0
       WHERE checker=?
     `, [socket.id], () => emitQueue());
   });
@@ -120,10 +122,10 @@ io.on('connection', (socket) => {
     db.query(`
       UPDATE queue
       SET checking = 1,
+          status = 'checking',
           checker = ?
       WHERE id = ? AND checking = 0
     `, [socket.id, id], () => emitQueue());
-  });
 
   // ✅ แก้ตรงนี้ให้อยู่ใน scope เดียวกัน
   socket.on('check-admin', (password) => {
