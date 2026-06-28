@@ -31,16 +31,26 @@ app.use(express.static('public'));
 
 // 👉 ส่งข้อมูล queue ไปยัง client
 const emitQueue = () => {
+
   db.query(`
     SELECT *
     FROM queue
     WHERE status IN ('waiting','checking')
-    ORDER BY priority DESC, id ASC
-  `, (err, rows) => {
-    if (!err) io.emit("queue-update", rows);
+    ORDER BY priority DESC,id ASC
+  `,(err,rows)=>{
+
+      if(err) return;
+
+      const checking = rows.find(q=>q.status==="checking");
+
+      io.emit("checking-update", checking ? checking.id : null);
+
+      io.emit("queue-update", rows);
+
   });
+
 };
-let activeCheckingId = null;
+
 let isCutoff = false;
 io.on('connection', (socket) => {
   console.log("🔌 New client connected");
@@ -113,54 +123,84 @@ io.on('connection', (socket) => {
   });
 
   socket.on("finish-one", (id) => {
-    db.query(`
-      UPDATE queue
-      SET status='done',
-          checker=NULL,
-          priority=0
-      WHERE id=?
-    `, [id], () => {
-      io.emit("checking-update", null); // 🔥 sync ทุก client
-      emitQueue();
-    });
-  });
 
-  let activeCheckingId = null;
-
-  socket.on("select-check", (id) => {
-    if (!id) {
-      activeCheckingId = null;
-      io.emit("checking-update", null);
-      emitQueue();
-      return;
-    }
-  
     db.query(
       `
       UPDATE queue
-      SET status='checking'
-      WHERE id=? AND status='waiting'
+      SET status='done'
+      WHERE id=?
       `,
       [id],
-      (err, result) => {
-        if (err) {
-          console.error("SQL error:", err);
-          return;
-        }
+      () => {
   
-        if (!result || typeof result.affectedRows === "undefined") {
-          console.error("Invalid result:", result);
-          return;
-        }
-  
-        if (result.affectedRows === 0) return;
-  
-        activeCheckingId = id;
-  
-        io.emit("checking-update", activeCheckingId);
+        io.emit("checking-update", null);
         emitQueue();
+  
       }
     );
+  
+  });
+
+  socket.on("select-check", (id) => {
+
+    // มีคน checking อยู่ไหม
+    db.query(
+      "SELECT id FROM queue WHERE status='checking' LIMIT 1",
+      (err, rows) => {
+  
+        if (err) return;
+  
+        // ถ้ามีคนตรวจอยู่แล้ว
+        if (rows.length > 0) {
+  
+          // ถ้าเป็นคนเดิม ไม่ต้องทำอะไร
+          if (rows[0].id == id) return;
+  
+          // ถ้าเป็นคนอื่น ห้ามเลือก
+          return;
+        }
+  
+        // ยังไม่มี checking
+        db.query(
+          `
+          UPDATE queue
+          SET status='checking'
+          WHERE id=? AND status='waiting'
+          `,
+          [id],
+          (err2) => {
+  
+            if (err2) {
+              console.log(err2);
+              return;
+            }
+  
+            io.emit("checking-update", id);
+            emitQueue();
+  
+          }
+        );
+  
+      }
+    );
+  
+  });
+  socket.on("cancel-check", () => {
+
+    db.query(
+      `
+      UPDATE queue
+      SET status='waiting'
+      WHERE status='checking'
+      `,
+      () => {
+  
+        io.emit("checking-update", null);
+        emitQueue();
+  
+      }
+    );
+  
   });
 
   // ✅ แก้ตรงนี้ให้อยู่ใน scope เดียวกัน
