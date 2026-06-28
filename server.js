@@ -33,17 +33,13 @@ app.use(express.static('public'));
 const emitQueue = () => {
 
   db.query(`
-    SELECT *
-    FROM queue
-    WHERE status IN ('waiting','checking')
-    ORDER BY priority DESC,id ASC
+      SELECT *
+      FROM queue
+      WHERE status IN ('waiting','checking')
+      ORDER BY priority DESC,id ASC
   `,(err,rows)=>{
 
       if(err) return;
-
-      const checking = rows.find(q=>q.status==="checking");
-
-      io.emit("checking-update", checking ? checking.id : null);
 
       io.emit("queue-update", rows);
 
@@ -105,7 +101,7 @@ io.on('connection', (socket) => {
           priority=0
       WHERE status='checking'
     `, (err) => {
-      io.emit("checking-update", null);
+      
       emitQueue();
     });
   });
@@ -127,13 +123,22 @@ io.on('connection', (socket) => {
     db.query(
       `
       UPDATE queue
-      SET status='done'
-      WHERE id=?
+      SET
+        status='done',
+        checker=NULL,
+        priority=0
+      WHERE
+        id=?
+        AND checker=?
       `,
-      [id],
-      () => {
+      [id, socket.id],
+      (err) => {
   
-        io.emit("checking-update", null);
+        if (err) {
+          console.log(err);
+          return;
+        }
+  
         emitQueue();
   
       }
@@ -143,59 +148,55 @@ io.on('connection', (socket) => {
 
   socket.on("select-check", (id) => {
 
-    // มีคน checking อยู่ไหม
     db.query(
-      "SELECT id FROM queue WHERE status='checking' LIMIT 1",
-      (err, rows) => {
+      `
+      UPDATE queue
+      SET
+        status='checking',
+        checker=?
+      WHERE
+        id=?
+        AND status='waiting'
+      `,
+      [socket.id, id],
+      (err, result) => {
   
-        if (err) return;
-  
-        // ถ้ามีคนตรวจอยู่แล้ว
-        if (rows.length > 0) {
-  
-          // ถ้าเป็นคนเดิม ไม่ต้องทำอะไร
-          if (rows[0].id == id) return;
-  
-          // ถ้าเป็นคนอื่น ห้ามเลือก
+        if (err) {
+          console.log(err);
           return;
         }
   
-        // ยังไม่มี checking
-        db.query(
-          `
-          UPDATE queue
-          SET status='checking'
-          WHERE id=? AND status='waiting'
-          `,
-          [id],
-          (err2) => {
+        if (result.affectedRows === 0) {
+          socket.emit("queue-already-checking");
+          return;
+        }
   
-            if (err2) {
-              console.log(err2);
-              return;
-            }
-  
-            io.emit("checking-update", id);
-            emitQueue();
-  
-          }
-        );
+        emitQueue();
   
       }
     );
   
   });
-  socket.on("cancel-check", () => {
+  socket.on("cancel-check", (id) => {
 
     db.query(
       `
       UPDATE queue
-      SET status='waiting'
-      WHERE status='checking'
+      SET
+        status='waiting',
+        checker=NULL
+      WHERE
+        id=?
+        AND checker=?
       `,
-      () => {
+      [id, socket.id],
+      (err) => {
   
-        io.emit("checking-update", null);
+        if (err) {
+          console.log(err);
+          return;
+        }
+  
         emitQueue();
   
       }

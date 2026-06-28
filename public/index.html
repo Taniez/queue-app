@@ -119,7 +119,7 @@
   <button id="adminBtn" onclick="showAdminLogin()">
     ⚙️
 </button>
-  <h1>ระบบคิวออนไลน์1.3.7</h1>
+  <h1>ระบบคิวออนไลน์1.3.8</h1>
   <!-- <div class="admin-auth">
     <input type="password" id="adminPass" placeholder="รหัสผ่าน Admin" />
     <button onclick="checkAdmin()">ยืนยันตัวตน</button>
@@ -147,7 +147,7 @@
   <script>
     let isCutoff = false;
     let stickerInterval = null;
-    let highlightedId = null;
+   
     
     const socket = io();
     let adminVerified = false;
@@ -185,9 +185,7 @@ if(password){
 }
 
 }
-socket.on("checking-update", (id) => {
-  highlightedId = id;
-});
+
 
 socket.on("admin-status",(isValid)=>{
 
@@ -241,49 +239,50 @@ text.style.flex = "1";
 li.appendChild(text);
 
     // 🟡 highlight
-    if (highlightedId === item.id) {
+    if (item.status === "checking") {
 
 li.style.background = "#ffe066";
 
-if (adminVerified) {
+// เป็นของเราไหม
+const isMine = item.checker === socket.id;
+
+if (adminVerified && isMine) {
 
     const wrap = document.createElement("div");
-    wrap.style.marginTop = "15px";
     wrap.style.display = "flex";
-    wrap.style.justifyContent = "center";
     wrap.style.gap = "10px";
+    wrap.style.justifyContent = "center";
+    wrap.style.marginTop = "15px";
 
-    // ตรวจเสร็จ
     const doneBtn = document.createElement("button");
     doneBtn.textContent = "✅ ตรวจเสร็จ";
-    doneBtn.style.width = "160px";
     doneBtn.style.margin = "0";
+    doneBtn.style.width = "160px";
 
     doneBtn.onclick = (e)=>{
         e.stopPropagation();
         socket.emit("finish-one", item.id);
     };
 
-    // ยกเลิก
     const cancelBtn = document.createElement("button");
     cancelBtn.textContent = "↩ ยกเลิก";
-    cancelBtn.style.width = "160px";
     cancelBtn.style.margin = "0";
+    cancelBtn.style.width = "160px";
     cancelBtn.style.background = "#999";
 
-    cancelBtn.onclick=(e)=>{
+    cancelBtn.onclick = (e)=>{
         e.stopPropagation();
-        socket.emit("cancel-check");
+        socket.emit("cancel-check", item.id);
     };
 
     wrap.appendChild(doneBtn);
     wrap.appendChild(cancelBtn);
 
     li.appendChild(wrap);
-}
 
 }
-    // 🔒 admin only click
+
+} 
     let lastClick = 0;
 
     li.onclick = () => {
@@ -295,7 +294,14 @@ if (adminVerified) {
 });
 });
 
+socket.on("queue-already-checking", () => {
 
+Swal.fire({
+    icon: "warning",
+    title: "คิวนี้มีคนกำลังตรวจอยู่"
+});
+
+});
 
     socket.on('cutoff-status', (state) => {
       isCutoff = state;
