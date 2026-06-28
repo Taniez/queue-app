@@ -2,110 +2,241 @@
 <html lang="th">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>ระบบคิว</title>
   <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <style>
+    *, *::before, *::after { box-sizing: border-box; }
+
     body {
       font-family: 'Segoe UI', sans-serif;
       background-color: #f7f7f7;
       margin: 0;
-      padding: 30px;
+      padding: 20px 16px 40px;
       text-align: center;
     }
-    h1 { color: #2c3e50; font-size: 3.5rem; margin-bottom: 30px; }
-    input[type="text"], input[type="password"], button {
-      width: 90vw; max-width: 500px; font-size: 28px;
-      padding: 20px 25px; margin: 18px auto; display: block;
-      border-radius: 12px; border: 1px solid #ccc; box-sizing: border-box;
+
+    h1 {
+      color: #2c3e50;
+      font-size: clamp(1.8rem, 6vw, 3.5rem);
+      margin: 60px 0 24px;
+      line-height: 1.2;
     }
+
+    h2 {
+      font-size: clamp(1rem, 4vw, 1.6rem);
+      color: #2c3e50;
+      min-height: 1.5em;
+    }
+
+    /* ── Inputs & Buttons base ── */
+    input[type="text"],
+    input[type="password"],
     button {
-      background-color: #3498db; color: white; border: none;
-      cursor: pointer; transition: background-color 0.3s ease;
-      font-weight: 600; box-shadow: 0 4px 12px rgba(52,152,219,0.5);
+      width: 100%;
+      max-width: 500px;
+      font-size: clamp(16px, 4vw, 24px);
+      padding: clamp(14px, 3vw, 20px) clamp(16px, 3vw, 24px);
+      margin: 10px auto;
+      display: block;
+      border-radius: 12px;
+      border: 1px solid #ccc;
     }
-    button:hover { background-color: #2980b9; box-shadow: 0 6px 16px rgba(41,128,185,0.6); }
-    #queueList {
-      list-style: none; padding: 0; margin-top: 30px;
-      max-width: 520px; margin-left: auto; margin-right: auto;
+
+    button {
+      background-color: #3498db;
+      color: white;
+      border: none;
+      cursor: pointer;
+      transition: background-color 0.2s ease, transform 0.1s ease;
+      font-weight: 600;
+      box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
     }
-    #queueList li {
-      background-color: #ecf0f1; padding: 25px 30px; margin: 12px auto;
-      border-radius: 14px; box-shadow: 0 6px 15px rgba(0,0,0,0.12);
-      font-size: 28px; box-sizing: border-box; max-width: 480px; font-weight: 600;
-    }
-    .cutoff-mode { background-color: #fff5f5 !important; }
-    .floating-sticker {
-      position: fixed; width: 120px; z-index: 9999;
-      pointer-events: none; animation: floatUp 3s ease-out forwards;
-    }
-    @keyframes floatUp {
-      0%   { opacity:0; transform:translateY(50px) scale(0.8); }
-      20%  { opacity:1; transform:translateY(0px) scale(1); }
-      100% { opacity:0; transform:translateY(-150px) scale(1.2) rotate(10deg); }
-    }
+
+    button:hover  { background-color: #2980b9; }
+    button:active { transform: scale(0.97); }
+
+    /* ── Admin gear button ── */
     #adminBtn {
-      position: fixed; top: 12px; right: 12px;
-      width: 52px; height: 52px; border-radius: 50%;
-      padding: 0; font-size: 22px; z-index: 9999;
+      position: fixed;
+      top: 12px; right: 12px;
+      width: 48px; height: 48px;
+      border-radius: 50%;
+      padding: 0;
+      font-size: 20px;
+      z-index: 9999;
+      max-width: none;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
     }
 
-    /* ── ป้ายชื่อ admin ที่กำลังตรวจ (#5) ── */
+    /* ── Queue list ── */
+    #queueList {
+      list-style: none;
+      padding: 0;
+      margin: 20px auto 0;
+      max-width: 520px;
+      width: 100%;
+    }
+
+    #queueList li {
+      background-color: #ecf0f1;
+      padding: clamp(14px, 3vw, 22px) clamp(16px, 4vw, 28px);
+      margin: 10px 0;
+      border-radius: 14px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.09);
+      font-size: clamp(18px, 4vw, 26px);
+      font-weight: 600;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 10px;
+      cursor: default;
+      width: 100%;
+    }
+
+    /* ── Checker badge ── */
     .checker-badge {
-      font-size: 14px; font-weight: 400; color: #555;
-      background: rgba(0,0,0,0.08); border-radius: 6px;
-      padding: 2px 8px; margin-left: 8px;
+      font-size: clamp(11px, 2.5vw, 14px);
+      font-weight: 400;
+      color: #555;
+      background: rgba(0,0,0,0.08);
+      border-radius: 6px;
+      padding: 2px 8px;
+      margin-left: 8px;
+      white-space: nowrap;
     }
 
-    /* ── tab ประวัติ (#9) ── */
-    .tab-bar {
-      display: flex; justify-content: center; gap: 12px;
-      margin: 32px auto 0; max-width: 520px;
+    /* ── Admin action buttons inside queue item ── */
+    .action-wrap {
+      display: flex;
+      gap: 10px;
+      width: 100%;
     }
-    .tab-btn {
-      flex: 1; padding: 14px; font-size: 20px; border-radius: 10px;
-      background: #dfe6e9; color: #2c3e50; box-shadow: none;
+
+    .action-wrap button {
       margin: 0;
+      flex: 1;
+      font-size: clamp(15px, 3.5vw, 20px);
+      padding: clamp(12px, 2.5vw, 16px);
+      max-width: none;
     }
-    .tab-btn.active { background: #3498db; color: white; }
+
+    .action-wrap .cancel-btn {
+      background: #95a5a6;
+      box-shadow: none;
+    }
+
+    .action-wrap .cancel-btn:hover { background: #7f8c8d; }
+
+    /* ── Admin controls ── */
+    .admin-controls {
+      max-width: 500px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    /* ── Tab bar ── */
+    .tab-bar {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin: 28px auto 0;
+      max-width: 520px;
+      width: 100%;
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: clamp(11px, 2.5vw, 14px);
+      font-size: clamp(14px, 3.5vw, 18px);
+      border-radius: 10px;
+      background: #dfe6e9;
+      color: #2c3e50;
+      box-shadow: none;
+      margin: 0;
+      max-width: none;
+    }
+
+    .tab-btn.active {
+      background: #3498db;
+      color: white;
+    }
+
     .tab-panel { display: none; }
     .tab-panel.active { display: block; }
-    #historyList {
-      list-style: none; padding: 0; margin-top: 16px;
-      max-width: 520px; margin-left: auto; margin-right: auto;
-    }
-    #historyList li {
-      background: #dfe6e9; padding: 16px 24px; margin: 10px auto;
-      border-radius: 12px; font-size: 22px; font-weight: 500;
-      box-sizing: border-box; max-width: 480px;
-      display: flex; justify-content: space-between; align-items: center;
-    }
-    #historyList li .hist-checker { font-size: 14px; color: #636e72; }
-    #historyCount { font-size: 1.1rem; color: #636e72; margin-top: 6px; }
 
-    /* ── Mobile ── */
-    @media (max-width:768px) {
-      body { padding: 16px; }
-      h1 { font-size: 2rem; margin-top: 55px; margin-bottom: 20px; }
-      h2 { font-size: 1.5rem !important; }
-      input, button { width: 100%; max-width: none; font-size: 20px; padding: 16px; }
-      #queueList { max-width: 100%; padding: 0; }
-      #queueList li { max-width: none; width: 100%; padding: 18px; font-size: 22px; box-sizing: border-box; }
-      .admin-controls button { font-size: 20px; padding: 18px; }
-      .floating-sticker { width: 80px; }
-      #adminBtn { width: 48px; height: 48px; font-size: 20px; top: 10px; right: 10px; }
-      .tab-btn { font-size: 18px; padding: 12px; }
-      #historyList li { font-size: 18px; }
+    /* ── History list ── */
+    #historyList {
+      list-style: none;
+      padding: 0;
+      margin: 12px auto 0;
+      max-width: 520px;
+      width: 100%;
+    }
+
+    #historyList li {
+      background: #dfe6e9;
+      padding: clamp(12px, 2.5vw, 16px) clamp(16px, 3vw, 22px);
+      margin: 8px 0;
+      border-radius: 12px;
+      font-size: clamp(16px, 3.5vw, 20px);
+      font-weight: 500;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+    }
+
+    #historyList li .hist-checker {
+      font-size: clamp(12px, 2.5vw, 14px);
+      color: #636e72;
+    }
+
+    #historyCount {
+      font-size: clamp(0.9rem, 2.5vw, 1.1rem);
+      color: #636e72;
+      margin-top: 8px;
+    }
+
+    /* ── Cutoff mode ── */
+    .cutoff-mode { background-color: #fff5f5 !important; }
+
+    /* ── Floating sticker ── */
+    .floating-sticker {
+      position: fixed;
+      width: clamp(60px, 15vw, 110px);
+      z-index: 9999;
+      pointer-events: none;
+      animation: floatUp 3s ease-out forwards;
+    }
+
+    @keyframes floatUp {
+      0%   { opacity: 0; transform: translateY(50px) scale(0.8); }
+      20%  { opacity: 1; transform: translateY(0px)  scale(1);   }
+      100% { opacity: 0; transform: translateY(-150px) scale(1.2) rotate(10deg); }
+    }
+
+    /* ── Safe area for notch/home bar ── */
+    @supports (padding-bottom: env(safe-area-inset-bottom)) {
+      body { padding-bottom: calc(40px + env(safe-area-inset-bottom)); }
     }
   </style>
 </head>
 <body>
   <button id="adminBtn" onclick="showAdminLogin()">⚙️</button>
-  <h1>คิวตรวจงาน</h1>
+  <h1>คิวตรวจงาน 1.4.6</h1>
 
   <!-- User Panel -->
   <div id="userPanel">
-    <input type="text" id="nameInput" placeholder="ชื่อเล่น:เลขโต๊ะ:รหัสนักศึกษา4ตัวท้าย" maxlength="50" />
+    <input type="text" id="nameInput"
+      placeholder="ชื่อเล่น:เลขโต๊ะ:รหัส4ตัวท้าย"
+      maxlength="50"
+      autocomplete="off"
+      autocorrect="off"
+      autocapitalize="none" />
     <button onclick="joinQueue()">เข้าคิว</button>
     <h2 id="myQueue"></h2>
   </div>
@@ -119,8 +250,8 @@
 
   <!-- Tabs -->
   <div class="tab-bar">
-    <button class="tab-btn active" onclick="switchTab('queue')">📋 คิวปัจจุบัน</button>
-    <button class="tab-btn" onclick="switchTab('history')" id="historyTabBtn">🕐 ประวัติวันนี้</button>
+    <button class="tab-btn active" onclick="switchTab('queue', this)">📋 คิวปัจจุบัน</button>
+    <button class="tab-btn" onclick="switchTab('history', this)" id="historyTabBtn">🕐 ประวัติวันนี้</button>
   </div>
 
   <!-- Tab: Queue -->
@@ -128,7 +259,7 @@
     <ul id="queueList"></ul>
   </div>
 
-  <!-- Tab: History (#9) -->
+  <!-- Tab: History -->
   <div class="tab-panel" id="tab-history">
     <p id="historyCount">—</p>
     <ul id="historyList"></ul>
@@ -140,31 +271,35 @@
     let adminId = null;
     let adminVerified = false;
     let adminName = '';
-    let prevFirstId = null;   // #7: เช็คว่าคิวแรกเปลี่ยนไหม
+    let prevFirstId = null;
+
+    const SCORE_URL = 'https://score-system-nu.vercel.app/';
 
     const socket = io();
 
-    // ── #8: อัปเดต title tab ──
+    // ── Title update ──
     function updateTitle(count) {
       document.title = count > 0 ? `(${count}) ระบบคิว` : 'ระบบคิว';
     }
 
     // ── Tab switch ──
-    function switchTab(name) {
+    function switchTab(name, btn) {
       document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       document.getElementById('tab-' + name).classList.add('active');
-      event.currentTarget.classList.add('active');
+      btn.classList.add('active');
     }
 
     // ── Admin login ──
     async function showAdminLogin() {
       const { value: password } = await Swal.fire({
-        title: 'Admin Login', input: 'password',
+        title: 'Admin Login',
+        input: 'password',
         inputPlaceholder: 'กรอกรหัสผ่าน',
         inputAttributes: { autocapitalize: 'off', autocorrect: 'off' },
         showCancelButton: true,
-        confirmButtonText: 'เข้าสู่ระบบ', cancelButtonText: 'ยกเลิก'
+        confirmButtonText: 'เข้าสู่ระบบ',
+        cancelButtonText: 'ยกเลิก'
       });
       if (password) socket.emit('check-admin', password);
     }
@@ -178,12 +313,10 @@
       adminId = data.id;
       adminName = data.name;
       document.getElementById('adminButtons').style.display = 'block';
-      // แสดงปุ่มล้างคิวเฉพาะ TA แทน
       document.getElementById('clearBtn').style.display =
         data.name === 'TA แทน' ? 'block' : 'none';
       document.getElementById('userPanel').style.display = 'none';
 
-      // ✅ BUG FIX: ถ้ามีคิวค้างอยู่หลัง refresh แจ้งเตือนให้รู้
       if (data.resumeIds && data.resumeIds.length > 0) {
         Swal.fire({
           icon: 'warning',
@@ -200,8 +333,6 @@
     socket.on('queue-update', (queue) => {
       const ul = document.getElementById('queueList');
       ul.innerHTML = '';
-
-      // #8: title tab
       updateTitle(queue.length);
 
       const myName = localStorage.getItem('myName') || '';
@@ -209,7 +340,6 @@
       document.getElementById('myQueue').innerHTML =
         index === -1 ? '' : `🎉 ตอนนี้คุณอยู่คิวที่ <b>${index + 1}</b>`;
 
-      // #7: เสียงแจ้งเตือนเมื่อขึ้นเป็นคิวแรก
       if (myName && queue.length > 0) {
         const firstItem = queue[0];
         if (firstItem.name === myName && prevFirstId !== firstItem.id) {
@@ -221,16 +351,10 @@
 
       queue.forEach((item, i) => {
         const li = document.createElement('li');
-        li.style.display = 'flex';
-        li.style.flexDirection = 'column';
-        li.style.alignItems = 'flex-start';
-        li.style.gap = '10px';
 
-        // ส่วนบน: ลำดับ + ชื่อ + badge admin (#5)
+        // Top row: number + name + checker badge
         const topRow = document.createElement('div');
-        topRow.style.display = 'flex';
-        topRow.style.alignItems = 'center';
-        topRow.style.width = '100%';
+        topRow.style.cssText = 'display:flex;align-items:center;width:100%;flex-wrap:wrap;gap:6px;';
 
         const text = document.createElement('span');
         text.textContent = `${i + 1}. ${item.name}`;
@@ -238,7 +362,7 @@
 
         if (item.status === 'checking') {
           li.style.background = '#ffe066';
-          // #5: แสดงชื่อ admin ที่กำลังตรวจ
+
           if (item.checker_name) {
             const badge = document.createElement('span');
             badge.className = 'checker-badge';
@@ -246,28 +370,30 @@
             topRow.appendChild(badge);
           }
 
-          // ปุ่มของ admin เจ้าของคิว
+          li.appendChild(topRow);
+
           const isMine = item.checker == adminId;
           if (adminVerified && isMine) {
             const wrap = document.createElement('div');
-            wrap.style.cssText = 'display:flex;gap:10px;width:100%;';
+            wrap.className = 'action-wrap';
 
             const doneBtn = document.createElement('button');
             doneBtn.textContent = '✅ ตรวจเสร็จ';
-            doneBtn.style.cssText = 'margin:0;flex:1;font-size:20px;padding:14px;';
-            doneBtn.onclick = (e) => { e.stopPropagation(); socket.emit('finish-one', item.id); };
+            doneBtn.onclick = (e) => {
+              e.stopPropagation();
+              socket.emit('finish-one', item.id);
+              // ── Redirect to score system ──
+              window.location.href = SCORE_URL;
+            };
 
             const cancelBtn = document.createElement('button');
             cancelBtn.textContent = '↩ ยกเลิก';
-            cancelBtn.style.cssText = 'margin:0;flex:1;font-size:20px;padding:14px;background:#999;';
+            cancelBtn.className = 'cancel-btn';
             cancelBtn.onclick = (e) => { e.stopPropagation(); socket.emit('cancel-check', item.id); };
 
             wrap.appendChild(doneBtn);
             wrap.appendChild(cancelBtn);
-            li.appendChild(topRow);
             li.appendChild(wrap);
-          } else {
-            li.appendChild(topRow);
           }
         } else {
           li.appendChild(topRow);
@@ -283,14 +409,13 @@
       });
     });
 
-    // ── #9: ประวัติคิววันนี้ ──
+    // ── History update ──
     socket.on('history-update', (history) => {
       const ul = document.getElementById('historyList');
       ul.innerHTML = '';
       document.getElementById('historyCount').textContent =
         `ตรวจไปแล้ว ${history.length} คน`;
 
-      // อัปเดต badge บน tab
       const tabBtn = document.getElementById('historyTabBtn');
       tabBtn.textContent = `🕐 ประวัติวันนี้ (${history.length})`;
 
@@ -298,11 +423,9 @@
         const li = document.createElement('li');
         const nameSpan = document.createElement('span');
         nameSpan.textContent = `${i + 1}. ${item.name}`;
-
         const checkerSpan = document.createElement('span');
         checkerSpan.className = 'hist-checker';
         checkerSpan.textContent = item.checker_name ? `✓ ${item.checker_name}` : '✓';
-
         li.appendChild(nameSpan);
         li.appendChild(checkerSpan);
         ul.appendChild(li);
@@ -378,7 +501,7 @@
       Swal.fire({ icon: 'success', title: 'ออกจากระบบแล้ว', timer: 1000, showConfirmButton: false });
     }
 
-    // ── #7: เสียงแจ้งเตือนเมื่อถึงคิว ──
+    // ── Notification sound ──
     function playNotifSound() {
       try {
         const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -407,13 +530,13 @@
     }
     function showRandomSticker() {
       const stickers = [
-        { gif:'https://i.gifer.com/FPm.gif', sound:'sounds/sigma.mp3', duration:3000 },
+        { gif:'https://i.gifer.com/FPm.gif',  sound:'sounds/sigma.mp3', duration:3000 },
         { gif:'https://i.gifer.com/7Fm8.gif', sound:'sounds/china-ringing-phone (1).mp3', duration:3000 },
         { gif:'https://i.gifer.com/ArlX.gif', sound:'sounds/untitled3_13.mp3', duration:3000 },
         { gif:'https://i.gifer.com/Xrl7.gif', sound:'sounds/aimaihwaelw.mp3', duration:3000 },
-        { gif:'https://i.gifer.com/1Vv.gif', sound:'sounds/fahhhhhhhhhhhhhh.mp3', duration:3000 },
+        { gif:'https://i.gifer.com/1Vv.gif',  sound:'sounds/fahhhhhhhhhhhhhh.mp3', duration:3000 },
         { gif:'https://i.gifer.com/Cwgf.gif', sound:'sounds/michael-jackson-hee-hee.mp3', duration:3000 },
-        { gif:'https://i.gifer.com/4yd.gif', sound:'sounds/yaa.mp3', duration:3000 },
+        { gif:'https://i.gifer.com/4yd.gif',  sound:'sounds/yaa.mp3', duration:3000 },
         { gif:'https://i.gifer.com/72vU.gif', sound:'sounds/hehe.mp3', duration:3000 },
         { gif:'https://i.gifer.com/NHBl.gif', sound:'sounds/singsakdisiththi.mp3', duration:3000 },
         { gif:'https://i.gifer.com/PzUS.gif', sound:'sounds/yuuaimaihw-uuon.mp3', duration:10000 },
@@ -424,8 +547,8 @@
       const img = document.createElement('img');
       img.src = sticker.gif;
       img.className = 'floating-sticker';
-      img.style.left = `${Math.random() * window.innerWidth * 0.8}px`;
-      img.style.top = `${Math.random() * window.innerHeight * 0.6}px`;
+      img.style.left = `${Math.random() * (window.innerWidth * 0.8)}px`;
+      img.style.top  = `${Math.random() * (window.innerHeight * 0.6)}px`;
       document.body.appendChild(img);
       const audio = new Audio(sticker.sound);
       audio.volume = 0.5;
