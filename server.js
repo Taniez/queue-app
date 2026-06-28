@@ -75,26 +75,21 @@ io.on('connection', (socket) => {
     if (!isAdmin) return;
   
     db.query(`
-      SELECT *
-      FROM queue
-      WHERE status='waiting'
-        AND checking=0
+      SELECT * FROM queue
+      WHERE status='waiting' AND checking=0
       ORDER BY priority DESC, id ASC
       LIMIT 1
     `, (err, rows) => {
-  
       if (err || rows.length === 0) return;
   
-      const target = rows[0];
+      const id = rows[0].id;
   
-      // 🔥 กันซ้ำ: ต้องเช็คอีกทีตอน update
       db.query(`
         UPDATE queue
         SET checking=1,
             checker=?
         WHERE id=? AND checking=0
-      `, [socket.id, target.id], () => emitQueue());
-  
+      `, [socket.id, id], () => emitQueue());
     });
   });
   socket.on("finish-check", () => {
@@ -117,6 +112,17 @@ io.on('connection', (socket) => {
         });
       }
     });
+  });
+
+  socket.on("select-check", (id) => {
+    if (!id) return;
+  
+    db.query(`
+      UPDATE queue
+      SET checking = 1,
+          checker = ?
+      WHERE id = ? AND checking = 0
+    `, [socket.id, id], () => emitQueue());
   });
 
   // ✅ แก้ตรงนี้ให้อยู่ใน scope เดียวกัน

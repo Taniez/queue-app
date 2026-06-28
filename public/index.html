@@ -125,11 +125,17 @@
     <button onclick="checkAdmin()">ยืนยันตัวตน</button>
     <div id="adminStatus" class="admin-status"></div>
   </div> -->
-  <div>
-    <input type="text" id="nameInput" placeholder="ชื่อของคุณ" />
-    <button onclick="joinQueue()">เข้าคิว</button>
+  <div id="userPanel">
+    <div>
+      <input type="text" id="nameInput" placeholder="ชื่อของคุณ" />
+      <button onclick="joinQueue()">เข้าคิว</button>
+    </div>
+  
+    <h2 id="myQueue"></h2>
   </div>
-  <h2 id="myQueue"></h2>
+  <div id="adminPanel" style="display:none;">
+    <h3>Admin Mode</h3>
+  </div>
   <div class="admin-controls" id="adminButtons" style="display: none;">
     <button onclick="nextQueue()">เรียกคิวถัดไป (Admin เท่านั้น)</button>
     <button onclick="finishCheck()">
@@ -216,6 +222,7 @@ if(isValid){
     });
 
     document.getElementById("adminButtons").style.display="block";
+    document.getElementById("userPanel").style.display="none";
 
 }else{
 
@@ -244,23 +251,17 @@ if(index === -1){
 }
 
 queue.forEach((item, i) => {
+  const li = document.createElement('li');
 
-    const li = document.createElement('li');
+  li.textContent = `${i + 1}. ${item.name}`;
 
-    li.textContent = `${i + 1}. ${item.name}`;
+  li.onclick = () => {
+    if (!adminVerified) return;
 
-    if(item.cutoff == 1){
-        li.style.background = "#ff6b6b";
-        li.style.color = "white";
-    }
+    socket.emit("select-check", item.id);
+  };
 
-    if(item.status === "checking"){
-        li.style.background = "#ffd43b";
-        li.style.color = "#000";
-        li.innerHTML += " 📝 กำลังตรวจ";
-    }
-
-    ul.appendChild(li);
+  ul.appendChild(li);
 });
 });
 
@@ -318,6 +319,7 @@ queue.forEach((item, i) => {
 adminVerified=false;
 
 document.getElementById("adminButtons").style.display="none";
+document.getElementById("userPanel").style.display="block";
 
 Swal.fire({
     icon:'success',
