@@ -575,55 +575,48 @@
           li.appendChild(topRow);
 
           if (adminVerified && item.checker != null && adminId != null &&
-              String(item.checker) === String(adminId)) {
-            const wrap = document.createElement('div');
-            wrap.className = 'action-wrap';
+    String(item.checker) === String(adminId)) {
+  const wrap = document.createElement('div');
+  wrap.className = 'action-wrap';
 
-            const doneBtn = document.createElement('button');
-            doneBtn.textContent = '✅ ตรวจเสร็จ';
-            doneBtn.onclick = (e) => {
-              e.stopPropagation();
-              socket.emit('finish-one', item.id);
-              window.location.href = SCORE_URL;
-            };
+  const doneBtn = document.createElement('button');
+  doneBtn.textContent = '✅ ตรวจเสร็จ';
+  doneBtn.onclick = (e) => {
+    e.stopPropagation();
+    socket.emit('finish-one', item.id);
+    window.location.href = SCORE_URL;
+  };
 
-            const cancelBtn = document.createElement('button');
-            cancelBtn.textContent = '↩ ยกเลิก';
-            cancelBtn.className = 'cancel-btn';
-            cancelBtn.onclick = (e) => { e.stopPropagation(); socket.emit('cancel-check', item.id); };
+  const cancelBtn = document.createElement('button');
+  cancelBtn.textContent = '↩ ยกเลิก';
+  cancelBtn.className = 'cancel-btn';
+  cancelBtn.onclick = (e) => { e.stopPropagation(); socket.emit('cancel-check', item.id); };
 
-            wrap.appendChild(doneBtn);
-            wrap.appendChild(cancelBtn);
-            li.appendChild(wrap);
-          }
+  // ✅ เพิ่มปุ่มลบตรงนี้
+  const deleteBtn = document.createElement('button');
+  deleteBtn.textContent = '🗑️ ลบ';
+  deleteBtn.className = 'delete-btn';
+  deleteBtn.onclick = (e) => {
+    e.stopPropagation();
+    Swal.fire({
+      icon: 'warning',
+      title: `ลบ "${item.name}" ออกจากคิว?`,
+      showCancelButton: true,
+      confirmButtonText: 'ลบเลย',
+      cancelButtonText: 'ยกเลิก',
+      confirmButtonColor: '#e74c3c'
+    }).then((result) => {
+      if (result.isConfirmed) socket.emit('delete-queue', item.id);
+    });
+  };
+
+  wrap.appendChild(doneBtn);
+  wrap.appendChild(cancelBtn);
+  wrap.appendChild(deleteBtn);  // ✅
+  li.appendChild(wrap);
+}
         } else {
           li.appendChild(topRow);
-
-          // ปุ่มลบ — แสดงเฉพาะ admin และคิวที่ยัง waiting
-          if (adminVerified) {
-            const wrap = document.createElement('div');
-            wrap.className = 'action-wrap';
-
-            const deleteBtn = document.createElement('button');
-            deleteBtn.textContent = '🗑️ ลบ';
-            deleteBtn.className = 'delete-btn';
-            deleteBtn.onclick = (e) => {
-              e.stopPropagation();
-              Swal.fire({
-                icon: 'warning',
-                title: `ลบ "${item.name}" ออกจากคิว?`,
-                showCancelButton: true,
-                confirmButtonText: 'ลบเลย',
-                cancelButtonText: 'ยกเลิก',
-                confirmButtonColor: '#e74c3c'
-              }).then((result) => {
-                if (result.isConfirmed) socket.emit('delete-queue', item.id);
-              });
-            };
-
-            wrap.appendChild(deleteBtn);
-            li.appendChild(wrap);
-          }
         }
 
         li.onclick = () => {
