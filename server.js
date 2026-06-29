@@ -61,7 +61,14 @@ const emitHistory = () => {
     io.emit('history-update', rows);
   });
 };
-
+socket.on('delete-queue', (id) => {
+  if (!requireAdmin(socket)) return;
+  db.query('DELETE FROM queue WHERE id=?', [id], (err) => {
+    if (err) { console.error('delete-queue error:', err); return; }
+    emitQueue();
+    emitHistory();
+  });
+});
 function requireAdmin(socket) {
   return socket.admin != null;
 }
