@@ -381,6 +381,50 @@
     }
   });
 })();
+// ════════════════════════════════════════════
+//  AUTO SEARCH + AUTO LOGIN FROM URL PARAM
+// ════════════════════════════════════════════
+(function () {
+  const params  = new URLSearchParams(window.location.search);
+  const search  = params.get('search');
+  const ap      = params.get('ap'); // adminPass จาก score system
+
+  // ล้าง query string ออกจาก URL โดยไม่ reload
+  window.history.replaceState({}, '', window.location.pathname);
+
+  // ถ้ามี adminPass → เก็บลง sessionStorage แล้วรอ connect เพื่อ login
+  if (ap) sessionStorage.setItem('adminPass', ap);
+
+  if (!search && !ap) return;
+
+  function onConnected() {
+    // auto login ถ้ามี ap
+    if (ap) {
+      // socket.on('admin-status') ตัวหลักจะจัดการ UI ให้อยู่แล้ว
+      socket.emit('check-admin', ap);
+    }
+
+    if (search) {
+      const saved      = localStorage.getItem('myName') || '';
+      const savedLast4 = saved.split(':').pop();
+
+      if (savedLast4 === search) {
+        socket.emit('join-queue', { name: saved });
+        document.getElementById('myQueue').innerHTML = '⏳ กำลังเข้าคิว...';
+      } else {
+        document.getElementById('nameInput').value = search;
+        document.getElementById('nameInput').focus();
+      }
+    }
+  }
+
+  // รองรับทั้งกรณี connect แล้วและยังไม่ connect
+  if (socket.connected) {
+    onConnected();
+  } else {
+    socket.once('connect', onConnected);
+  }
+})();
 
     // ════════════════════════════════════════════
     //  MUTE
