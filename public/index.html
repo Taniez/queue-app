@@ -353,6 +353,36 @@
     });
 
     // ════════════════════════════════════════════
+//  AUTO SEARCH FROM URL PARAM
+// ════════════════════════════════════════════
+(function () {
+  const params = new URLSearchParams(window.location.search);
+  const search = params.get('search');
+  if (!search) return;
+
+  // ล้าง query string ออกจาก URL โดยไม่ reload
+  window.history.replaceState({}, '', window.location.pathname);
+
+  // รอ socket connect แล้วค่อย auto-fill
+  // ใส่ค่าลงช่อง input และ localStorage เผื่อ user จะกดเข้าคิวเอง
+  socket.on('connect', () => {
+    // ถ้ามีชื่อใน localStorage อยู่แล้ว → ตรวจว่า 4 ตัวท้ายตรงกันไหม
+    const saved = localStorage.getItem('myName') || '';
+    const savedLast4 = saved.split(':').pop();
+
+    if (savedLast4 === search) {
+      // ชื่อตรง → auto join ทันที
+      socket.emit('join-queue', { name: saved });
+      document.getElementById('myQueue').innerHTML = '⏳ กำลังเข้าคิว...';
+    } else {
+      // ไม่ตรง → แค่ใส่ค่าในช่อง input ให้ user กรอกเพิ่มเอง
+      document.getElementById('nameInput').value = search;
+      document.getElementById('nameInput').focus();
+    }
+  });
+})();
+
+    // ════════════════════════════════════════════
     //  MUTE
     // ════════════════════════════════════════════
     function toggleMute() {
