@@ -6,7 +6,12 @@ const fs = require('fs');
 
 const app = express();
 const server = http.createServer(app);
-const io = socketIO(server);
+const io = socketIO(server, {
+  cors: {
+    origin: "https://score-system-nu.vercel.app",
+    methods: ["GET", "POST"]
+  }
+});
 require('dotenv').config();
 
 // ✅ #4: เปลี่ยนจาก createConnection → createPool (reconnect อัตโนมัติ)
