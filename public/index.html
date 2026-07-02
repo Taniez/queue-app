@@ -352,9 +352,7 @@
       document.getElementById('reconnectBanner').style.display = 'none';
     });
 
-    // ════════════════════════════════════════════
-//  AUTO SEARCH FROM URL PARAM
-// ════════════════════════════════════════════
+
 // ════════════════════════════════════════════
 //  AUTO SEARCH + AUTO LOGIN FROM URL PARAM
 // ════════════════════════════════════════════
@@ -628,12 +626,17 @@
   wrap.className = 'action-wrap';
 
   const doneBtn = document.createElement('button');
-  doneBtn.textContent = '✅ ตรวจเสร็จ';
-  doneBtn.onclick = (e) => {
-    e.stopPropagation();
-    socket.emit('finish-one', item.id);
-    window.location.href = SCORE_URL;
-  };
+doneBtn.textContent = '✅ ตรวจเสร็จ';
+doneBtn.onclick = (e) => {
+  e.stopPropagation();
+  socket.emit('finish-one', item.id);
+
+  // ดึงรหัส 4 หลักท้ายจากชื่อ เช่น "ออม:12:5678" หรือ "12:5678"
+  const parts = item.name.split(':');
+  const code  = parts[parts.length - 1];
+
+  window.location.href = `${SCORE_URL}?search=${encodeURIComponent(code)}`;
+};
 
   const cancelBtn = document.createElement('button');
   cancelBtn.textContent = '↩ ยกเลิก';
