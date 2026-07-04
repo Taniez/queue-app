@@ -633,7 +633,8 @@ doneBtn.onclick = (e) => {
 
   // ดึงรหัส 4 หลักท้ายจากชื่อ เช่น "ออม:12:5678" หรือ "12:5678"
   const parts = item.name.split(':');
-  const code  = parts[parts.length - 1];
+  const rawCode = parts[parts.length - 1];
+  const code = formatCodeWithDash(rawCode); // 5678 -> 567-8
 
   window.location.href = `${SCORE_URL}?search=${encodeURIComponent(code)}`;
 };
@@ -729,7 +730,12 @@ doneBtn.onclick = (e) => {
       if (!adminVerified) return;
       socket.emit('set-cutoff', !isCutoff);
     }
-
+    function formatCodeWithDash(code) {
+  if (!code) return code;
+  if (code.includes('-')) return code; // มี - อยู่แล้ว ไม่ต้องใส่ซ้ำ
+  if (code.length < 2) return code;
+  return code.slice(0, -1) + '-' + code.slice(-1);
+}
     // ════════════════════════════════════════════
     //  JOIN / CLEAR
     // ════════════════════════════════════════════
